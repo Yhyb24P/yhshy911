@@ -1,2 +1,0 @@
-extends: nature
-structure_tools: [PyMOL, ChimeraX, VMD, MDAnalysis]

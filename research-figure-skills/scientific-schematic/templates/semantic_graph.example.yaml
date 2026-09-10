@@ -1,3 +1,0 @@
-graph: {id: example, title: Example}
-nodes: [{id: input, label: Input, type: data, evidence: [{source: source.csv, locator: header}]}]
-edges: []

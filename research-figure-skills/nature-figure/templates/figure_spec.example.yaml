@@ -1,1 +1,0 @@
-figure: {id: example, claim: Explicit-data figure, source: {type: csv, path: data.csv}, journal_profile: nature, dimensions: {preset: single-column}, panels: [{id: a, type: scatter, x: x, y: y, x_label: "x / unit", y_label: "y / unit"}], output: {directory: output, formats: [pdf, svg, png]}}
