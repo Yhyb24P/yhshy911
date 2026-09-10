@@ -10,12 +10,16 @@ from pathlib import Path
 from zipfile import ZipFile
 import xml.etree.ElementTree as ET
 
+import numpy as np
+import pandas as pd
 from openpyxl import load_workbook
 
 import model1
 import model2
 import model3
 import model4
+import generate_tables
+import validate
 from xlsx_io import HEADER, Q4_R_COLS, R_COLS
 
 
@@ -120,6 +124,96 @@ def _check_event(meta, label):
             f"{label}: 事件场 max(X)={xmax:.12g} 未定位到 0.15")
 
 
+def _selected_rows(path, sheet, times):
+    """顺序抽取指定时刻，供数值内容核对。"""
+    wanted = {int(t) for t in times}
+    out = {}
+    wb = load_workbook(path, read_only=True, data_only=True)
+    ws = wb[sheet]
+    header = list(next(ws.iter_rows(min_row=1, max_row=1, values_only=True)))
+    for row in ws.iter_rows(min_row=2, values_only=True):
+        t = int(row[0])
+        if t in wanted:
+            out[t] = dict(zip(header[1:], row[1:]))
+        if t >= max(wanted):
+            break
+    wb.close()
+    _assert(out.keys() == wanted, f"{path.name}/{sheet}: 数值抽查时刻不完整")
+    return out
+
+
+def _assert_value(got, expected, label):
+    """Excel 四位小数应等于轨迹文件按相同规则舍入后的值。"""
+    if pd.isna(expected):
+        _assert(got is None, f"{label}: 越材位置应为空，实际为 {got}")
+    else:
+        _assert(got is not None and abs(float(got) - round(float(expected), 4)) < 5e-9,
+                f"{label}: 实际 {got}，轨迹舍入值 {round(float(expected), 4)}")
+
+
+def _content_spot_checks(q2, q4):
+    """用独立轨迹/事件元数据抽查正式工作簿和论文表的数值内容。"""
+    q1 = pd.read_csv(TABLES / "q1_samples.csv").set_index("t")
+    q2_csv = pd.read_csv(TABLES / "q2_60s.csv").set_index("t")
+    q4_csv = pd.read_csv(TABLES / "q4_samples.csv").set_index("t")
+
+    q1_times = (1, 100, 1800)
+    for sheet, prefix in (("温度", "T"), ("水分浓度", "X")):
+        got = _selected_rows(DATA / "result1.xlsx", sheet, q1_times)
+        for t in q1_times:
+            for r in (0.0, 1.0, 2.0):
+                _assert_value(got[t][r], q1.loc[t, f"{prefix}_{r}"],
+                              f"result1/{sheet}, t={t}, r={r}")
+
+    q3_times = (60, 10800, int(q2["t_dry"] // 60) * 60)
+    for book in ("result2.xlsx", "result3.xlsx"):
+        sheet = "水分浓度" if book == "result2.xlsx" else "Sheet1"
+        got = _selected_rows(DATA / book, sheet, q3_times)
+        for t in q3_times:
+            for r in (0.0, 1.0, 2.0):
+                _assert_value(got[t][r], q2_csv.loc[t, f"X_{r}"],
+                              f"{book}, t={t}, r={r}")
+
+    q4_times = (60, 10800, int(q4["t_dry"] // 60) * 60)
+    got = _selected_rows(DATA / "result4.xlsx", "Sheet1", q4_times)
+    for t in q4_times:
+        for header, column in ((0.0, "X_0.0"), (1.0, "X_1.0"),
+                               (1.5, "X_1.5"), ("药材表面", "X_surface")):
+            _assert_value(got[t][header], q4_csv.loc[t, column],
+                          f"result4, t={t}, r={header}")
+
+    tables_meta = _load_meta("paper_tables_meta.json")
+    _assert(tables_meta["signature"] == generate_tables._signature(),
+            "表1–6 生成结果指纹已过期")
+    _assert(tables_meta["q3_event_s"] == q2["t_dry"], "表5 精确事件时刻错误")
+    _assert(tables_meta["q4_event_s"] == q4["t_dry"], "表6 精确事件时刻错误")
+    room = generate_tables.DryingRoom(ROOT / "data" / "附件1.xlsx")
+    event_rows = {
+        5: generate_tables._event_values(2, q2, generate_tables.RADII, room),
+        6: generate_tables._event_values(
+            4, q4, generate_tables.Q4_FIXED, room,
+            generate_tables.Radius(ROOT / "data" / "附件2.xlsx"), add_surface=True),
+    }
+    for number, expected_rows in {1: 7, 2: 7, 3: 7, 4: 7, 5: 11, 6: 10}.items():
+        path = TABLES / f"paper_table{number}.csv"
+        _assert(path.exists(), f"缺少 {path}")
+        df = pd.read_csv(path)
+        _assert(len(df) == expected_rows, f"表{number}: 应有 {expected_rows} 行")
+        _assert(np.isfinite(pd.to_numeric(df.iloc[-1, 1:], errors="coerce")).any(),
+                f"表{number}: 末行没有有效数值")
+        if number in (5, 6):
+            _assert(str(df.iloc[-1, 0]).startswith("烘干结束时间（"),
+                    f"表{number}: 缺少精确终止事件行")
+            vmax = pd.to_numeric(df.iloc[-1, 1:], errors="coerce").max()
+            _assert(abs(vmax - 0.15) <= 5.1e-5,
+                    f"表{number}: 终止行 max(X)={vmax} 不符合 0.15")
+            actual = pd.to_numeric(df.iloc[-1, 1:], errors="coerce").to_numpy()
+            expected = np.round(event_rows[number], 4)
+            _assert(np.allclose(actual, expected, atol=5e-9, equal_nan=True),
+                    f"表{number}: 终止行场值与事件元数据不一致")
+    print("[通过] 数值内容抽查：正式工作簿↔轨迹文件，表5/6↔连续事件元数据")
+
+
 def run():
     q1 = _load_meta("q1_meta.json")
     q2 = _load_meta("q2_meta.json")
@@ -147,6 +241,14 @@ def run():
                 q3_rows, 60, q3_rows * 60, 60)
     _check_book("result4.xlsx", ["Sheet1"], Q4_R_COLS + ["药材表面"],
                 q4_rows, 60, q4_rows * 60, 60)
+    grid = _load_meta("grid_convergence.json")
+    grid_ns = tuple(sorted(int(n) for n in grid["t_dry_s"]["3"]))
+    _assert(grid.get("signature") == validate._signature(("grid", grid_ns)),
+            "网格收敛结果指纹已过期")
+    grid_q3_n321 = grid["t_dry_s"]["3"]["321"]
+    _assert(abs(grid_q3_n321 - q2["t_dry"]) < 0.01,
+            f"Q3 正式事件与网格验证 N=321 不一致：{q2['t_dry']:.4f} vs {grid_q3_n321:.4f} s")
+    _content_spot_checks(q2, q4)
     print(f"[通过] 连续事件：Q3={q2['t_dry']:.4f} s，Q4={q4['t_dry']:.4f} s")
 
 

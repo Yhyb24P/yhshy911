@@ -137,12 +137,33 @@ def check_bessel(N=81):
         print(f"  时变 T_a:   t={t_chk:>6.0f} s   max|T_num−T_Duhamel| = {err:.3e} °C")
 
 
-def _event_run(q, N=81, dt_cap=60.0, quasi_steady_T=False):
+def _event_run(q, N=81, dt_cap=60.0, quasi_steady_T=False,
+               event_interval=None):
     room = DryingRoom(os.path.join(ROOT, "data/附件1.xlsx"))
     radius = Radius(os.path.join(ROOT, "data/附件2.xlsx")) if q == 4 else None
     s = FVMSolver(q, room, N=N, radius=radius, dt_cap=dt_cap,
                   quasi_steady_T=quasi_steady_T)
-    return integrate_to_event(s, 60.0, log_every_s=0.0)
+    if event_interval is None:
+        return integrate_to_event(s, 60.0, log_every_s=0.0)
+
+    # 正式 Q2 每 1 s 调用一次 advance_to 并随即检查事件。验证时复现完全
+    # 相同的时间线，但只在 60 s 时刻保留场，避免保存约 20 万个状态。
+    if 60 % event_interval != 0:
+        raise ValueError("60 s 输出间隔必须是事件检查间隔的整数倍")
+    times, Ts, Xs = [], [], []
+    k = 0
+    while True:
+        k += 1
+        t_next = event_interval * k
+        lo_solver = s.clone()
+        s.advance_to(t_next)
+        if s.g() <= 0.0:
+            t_dry, T_ev, X_ev = s.refine_event(lo_solver, t_next)
+            return times, Ts, Xs, t_dry, T_ev, X_ev
+        if abs(t_next / 60.0 - round(t_next / 60.0)) < 1e-10:
+            times.append(t_next)
+            Ts.append(s.T.copy())
+            Xs.append(s.X.copy())
 
 
 CHECK_TIMES = (1800, 3600, 7200, 10800, 21600, 43200, 86400, 172800)
@@ -186,7 +207,10 @@ def grid_convergence(Ns=(81, 161, 321), questions=(3, 4)):
         previous = None
         previous_event = None
         for N in Ns:
-            times, Ts, Xs, t_dry, _Tev, _Xev = _event_run(q, N=N)
+            # Q3 正式结果由 model2 在默认 dt_cap=60 s 下逐秒调用
+            # advance_to 并逐秒括区。验证复现同一配置，只把场输出抽稀。
+            kwargs = {"event_interval": 1.0} if q == 3 else {}
+            times, Ts, Xs, t_dry, _Tev, _Xev = _event_run(q, N=N, **kwargs)
             res[q][N] = t_dry
             print(f"  Q{q} N={N:>3d}: t_dry={t_dry:12.2f} s = {t_dry/3600:8.3f} h")
             fields = _sample_fields(q, times, Ts, Xs)
