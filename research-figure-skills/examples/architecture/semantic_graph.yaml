@@ -1,0 +1,8 @@
+graph: {id: evidence-workflow, title: Evidence-constrained workflow}
+nodes:
+  - {id: data, label: Validated data, type: data, evidence: [{source: ../sensitivity/data.csv, locator: "header and rows 1-11"}]}
+  - {id: spec, label: Figure specification, type: contract, evidence: [{source: ../sensitivity/figure_spec.yaml, locator: "figure"}]}
+  - {id: render, label: Deterministic renderer, type: software, evidence: [{source: ../../nature-figure/scripts/render.py, locator: "run"}]}
+edges:
+  - {source: data, target: spec, relation: constrains, evidence: [{source: ../sensitivity/figure_spec.yaml, locator: "source"}]}
+  - {source: spec, target: render, relation: configures, evidence: [{source: ../../nature-figure/scripts/render.py, locator: "run"}]}

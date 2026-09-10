@@ -1,0 +1,10 @@
+matplotlib
+numpy
+pandas
+PyYAML
+jsonschema
+Pillow
+PyMuPDF
+lxml
+networkx
+pytest

@@ -1,0 +1,7 @@
+graph_id: evidence-workflow
+source:
+  path: /home/yhshy/git_files/CUMCM2026-A/research-figure-skills/examples/architecture/semantic_graph.yaml
+  sha256: b86db0c25cebd8c43ca973206344ef43d159cb89a19b8cb978b4416673c1b164
+generated_at: '2026-09-10T20:37:53.529852+00:00'
+manual_edits:
+  declared: false

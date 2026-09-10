@@ -1,0 +1,9 @@
+journal: {name: Nature}
+dimensions: {single_column_mm: 90, double_column_mm: 180, max_height_mm: 170}
+typography: {preferred_fonts: [Arial, Helvetica, DejaVu Sans], min_font_pt: 5, normal_font_pt: 6, panel_label_pt: 8, panel_label_weight: bold}
+panel_labels: {style: lowercase}
+export: {vector: [pdf, svg], raster: {format: png, dpi: 450}, color_space: RGB}
+matplotlib: {pdf_fonttype: 42, ps_fonttype: 42}
+style: {background_grid: false, shadow: false, gradient: false, colored_text: false}
+accessibility: {require_non_color_encoding: true}
+statistics: {require_n_definition: true, require_errorbar_definition: true, require_test_name_when_significance_shown: true, require_multiple_testing_method_when_applicable: true}

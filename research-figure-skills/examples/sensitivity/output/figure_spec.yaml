@@ -1,0 +1,9 @@
+figure:
+  id: sensitivity-smoke-test
+  claim: Synthetic smoke-test fixture demonstrates deterministic grouped line rendering.
+  source: {type: csv, path: data.csv}
+  journal_profile: nature
+  dimensions: {preset: single-column}
+  panels:
+    - {id: a, type: line, x: perturbation, y: pcc, group: model, x_label: "Parameter perturbation / fraction", y_label: PCC}
+  output: {directory: output, formats: [pdf, svg, png]}
