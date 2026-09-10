@@ -1,0 +1,19 @@
+{
+ "N": 321,
+ "signature": "7b6ba830030185fa1c0b673062dfc5d648e92404638bd66378e36717812a7034",
+ "temperature_C": {
+  "start": 48.0,
+  "stop": 52.0,
+  "step": 0.25,
+  "measured_baseline": 50.165
+ },
+ "hm_factors": [
+  1.0
+ ],
+ "n_scenarios": 18,
+ "n_pareto": 1,
+ "files": [
+  "quality_pareto.csv",
+  "quality_profiles.csv"
+ ]
+}
