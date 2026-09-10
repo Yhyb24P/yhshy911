@@ -12,7 +12,7 @@ import time as _time
 import numpy as np
 
 from props import DryingRoom, Radius
-from solver import FVMSolver, integrate_to_event, map_to_physical
+from solver import FVMSolver, integrate_to_event, map_to_physical, surface_from_state
 from xlsx_io import Q4_R_COLS, write_workbook
 from utils import atomic_json_dump, input_signature, save_fig, setup_plot, staged_path
 
@@ -29,11 +29,11 @@ def _signature(N):
     ], settings=(N, 60.0))
 
 
-def _row(Xcells, t, rad):
+def _row(Tcells, Xcells, t, room, rad):
     """某时刻的输出行：0–1.9 cm 固定位置 + 移动表面值。"""
     Rk = float(rad(t))
     mapped = map_to_physical(Xcells, np.array(Q4_R_COLS) * 1e-2, Rk)
-    surf = 1.5 * Xcells[-1] - 0.5 * Xcells[-2]
+    surf = surface_from_state(4, room, t, Tcells, Xcells, Rk)[1]
     return np.append(mapped, surf)
 
 
@@ -55,7 +55,7 @@ def run(N=321, reuse=True, plot=True):
     s = FVMSolver(4, room, N=N, radius=rad)
     times, Ts, Xs, t_dry, T_ev, X_ev = integrate_to_event(s, 60.0)
 
-    Xout = np.array([_row(Xs[k], times[k], rad) for k in range(len(times))])
+    Xout = np.array([_row(Ts[k], Xs[k], times[k], room, rad) for k in range(len(times))])
     write_workbook(out, [("Sheet1", Q4_R_COLS + ["药材表面"], times, Xout)])
     print(f"[model4] 写入 {out}（{len(times)} 行 × {len(Q4_R_COLS)+1} 列，严格 60 s 间隔）")
 

@@ -10,10 +10,18 @@ import os
 import pandas as pd
 
 from xlsx_io import R_COLS, write_workbook
+from utils import atomic_json_dump, input_signature
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 META = os.path.join(ROOT, "results/tables/q2_meta.json")
+Q3_META = os.path.join(ROOT, "results/tables/q3_meta.json")
 CSV = os.path.join(ROOT, "results/tables/q2_60s.csv")
+
+
+def _signature(N):
+    return input_signature([
+        __file__, os.path.join(ROOT, "src/xlsx_io.py"), META, CSV,
+    ], settings=(N, 60.0))
 
 
 def run(N=321):
@@ -27,6 +35,8 @@ def run(N=321):
 
     out = os.path.join(ROOT, "data/附件3/result3.xlsx")
     write_workbook(out, [("Sheet1", R_COLS, times, Xphys)])
+    atomic_json_dump({"N": N, "signature": _signature(N),
+                      "n_rows": len(times), "t_dry": meta["t_dry"]}, Q3_META)
     print(f"[model3] 写入 {out}（{len(times)} 行，严格 60 s 间隔）")
     print(f"[model3] t_dry^(3) = {meta['t_dry']:.4f} s = {meta['t_dry']/3600:.4f} h（论文表 5 使用此值）")
     return meta

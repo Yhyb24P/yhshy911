@@ -15,10 +15,19 @@ import time as _time
 
 from props import DryingRoom, Radius, HT, HM
 from solver import FVMSolver, integrate_to_event
+from utils import atomic_json_dump, input_signature
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 OUT = os.path.join(ROOT, "results/tables/q_sens.json")
-N = 81
+N = 321
+
+
+def _signature():
+    return input_signature([
+        __file__, os.path.join(ROOT, "src/solver.py"),
+        os.path.join(ROOT, "src/props.py"),
+        os.path.join(ROOT, "data/附件1.xlsx"), os.path.join(ROOT, "data/附件2.xlsx"),
+    ], settings=(N,))
 
 
 def t_dry_for(hT, hM, room):
@@ -47,7 +56,8 @@ def run():
     t_base = t_dry_for(HT, HM, room)
     print(f"[sens] 基准 t_dry^(3) = {t_base:.1f} s = {t_base/3600:.2f} h")
 
-    res = {"N": N, "t_base": t_base, "hT": {}, "hm": {}, "platform": {}}
+    res = {"N": N, "signature": _signature(), "t_base": t_base,
+           "hT": {}, "hm": {}, "platform": {}}
 
     # 1. h_T 弹性（§15.1）
     for f in (0.8, 1.0, 1.2):
@@ -98,7 +108,7 @@ def run():
           f"Δt_geom={t_q4_fixed - t_q4:+.1f} s（§10.7 纯几何收缩效应）")
 
     os.makedirs(os.path.dirname(OUT), exist_ok=True)
-    json.dump(res, open(OUT, "w"), indent=1)
+    atomic_json_dump(res, OUT)
     print(f"[sens] 写入 {OUT}，耗时 {_time.time()-t0:.1f} s")
     return res
 

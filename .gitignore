@@ -2,6 +2,7 @@
 /paper/
 /problem/
 /AGENTS.md
+/tmp/
 
 # Python / Jupyter
 __pycache__/
@@ -16,3 +17,6 @@ __pycache__/
 # 中断写入产生的临时文件
 *.tmp
 .*.tmp
+
+# 本地长任务控制台记录；结构化结果保存在 results/tables/*.json
+/results/*.log

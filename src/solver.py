@@ -12,6 +12,7 @@
     k_q/R_q · T_ξ(1) = h_T[T_a−T_s]， −D_q/R_q · X_ξ(1) = h_m[X_s−χ_a]，χ_a=C_a。
 """
 import numpy as np
+from scipy.linalg.lapack import dgtsv
 
 from props import PROPS, R0, T0, X0, HT, HM, theta
 
@@ -30,6 +31,33 @@ def map_to_physical(vals, r_phys, R):
     return np.where(inside, np.interp(np.clip(xi, 0.0, 1.0), nodes, vnodes), np.nan)
 
 
+def robin_surface_value(cell_value, gamma_cell, ambient, h, R, N):
+    """由最外层单元中心值重构 Robin 边界值。
+
+    半单元扩散阻力 δ/Γ 与表面对流阻力 1/h 串联：
+        Γ(u_N-u_s)/δ = h(u_s-u_a),  δ=R/(2N)。
+    该重构与最后一个控制体中的隐式边界通量完全一致。
+    """
+    delta = float(R) / (2.0 * N)
+    gamma_cell = float(gamma_cell)
+    return (gamma_cell * float(cell_value) + h * delta * float(ambient)) / (
+        gamma_cell + h * delta
+    )
+
+
+def surface_from_state(q, room, t, T, X, R, hT=HT, hM=HM):
+    """从任意历史 cell 场重构与离散 Robin 通量一致的两个表面值。"""
+    p = PROPS[q]
+    k_last = np.asarray(p["k"](X), dtype=float)
+    D_last = np.asarray(p["D"](X, theta(T)), dtype=float)
+    k_last = float(k_last if k_last.ndim == 0 else k_last[-1])
+    D_last = float(D_last if D_last.ndim == 0 else D_last[-1])
+    N = len(X)
+    Ts = robin_surface_value(T[-1], k_last, room.Ta(t), hT, R, N)
+    Xs = robin_surface_value(X[-1], D_last, room.Ca(t), hM, R, N)
+    return Ts, Xs
+
+
 class FVMSolver:
     def __init__(self, q, room, N=81, hT=HT, hM=HM, radius=None,
                  eps_T=1e-7, eps_X=1e-8, max_iter=100,
@@ -41,7 +69,7 @@ class FVMSolver:
         self.hT, self.hM, self.radius = hT, hM, radius
         self.p = PROPS[q]
         self.eps_T, self.eps_X, self.max_iter = eps_T, eps_X, max_iter
-        self.dt_max, self.dt_growth, self.dt_cap = dt_init, dt_growth, dt_cap
+        self.dt_max, self.dt_growth, self.dt_cap = min(dt_init, dt_cap), dt_growth, dt_cap
         self.dt_late = dt_late
         self.relax_xmax, self.omega = relax_xmax, omega
         self.quasi_steady_T = quasi_steady_T
@@ -61,17 +89,23 @@ class FVMSolver:
 
     def g(self):
         """事件函数 g(t) = X_max(t) − 0.15（model.md §9、§10.6）。"""
-        return float(self.X.max()) - 0.15
+        return max(float(self.X.max()), self.surface()[1]) - 0.15
 
     def surface(self):
-        """当前时刻表面（ξ=1）温度与含水率（二阶外推值）。"""
-        return 1.5 * self.T[-1] - 0.5 * self.T[-2], 1.5 * self.X[-1] - 0.5 * self.X[-2]
+        """当前时刻与 FVM Robin 通量一致的表面温度和含水率。"""
+        return surface_from_state(self.q, self.room, self.t, self.T, self.X,
+                                  self.R_at(self.t), self.hT, self.hM)
 
     def sample(self, r_phys):
         """当前时刻在物理半径 r_phys (m) 处采样 T、X；越材位置为 NaN。"""
         R = self.R_at(self.t)
         T = map_to_physical(self.T, r_phys, R)
         X = map_to_physical(self.X, r_phys, R)
+        at_surface = np.isclose(np.asarray(r_phys, dtype=float), R, rtol=0.0, atol=1e-12)
+        if np.any(at_surface):
+            Ts, Xs = self.surface()
+            T = np.where(at_surface, Ts, T)
+            X = np.where(at_surface, Xs, X)
         return T, X, R
 
     # ---------- 单步隐式积分（Picard）----------
@@ -117,16 +151,15 @@ class FVMSolver:
             D = self._vec(p["D"](Xm, Th))
             ki = self._harm(k[:-1], k[1:])
             Di = self._harm(D[:-1], D[1:])
-            Ts = 1.5 * Tm[-1] - 0.5 * Tm[-2]
-            Xs = 1.5 * Xm[-1] - 0.5 * Xm[-2]
-
             if self.quasi_steady_T:
                 Tn = np.full(N, Ta)
             else:
-                Tn = self._solve(Tm, H_T, ki, rho * cp, V, dt_eff, Ta, Ts, self.hT, R)
+                Tn = self._solve(Tm, H_T, ki, k[-1], rho * cp, V,
+                                 dt_eff, Ta, self.hT, R)
             # 水分方程 X_t=(1/(R²ξ))∂ξ[ξD X_ξ] 无 ρc_p 容量项（model.md §6 式(2)、§19 式(35)），
             # 时间系数乘子取 1.0；误用 ρc_p 会把 X 扩散放慢 ~1e6 倍导致冻结。
-            Xn = self._solve(Xm, H_X, Di, 1.0, V, dt_eff, Ca, Xs, self.hM, R)
+            Xn = self._solve(Xm, H_X, Di, D[-1], 1.0, V,
+                             dt_eff, Ca, self.hM, R)
             dT, dX = np.abs(Tn - Tm).max(), np.abs(Xn - Xm).max()
             if dT < self.eps_T and dX < self.eps_X:
                 Tm, Xm = Tn, Xn
@@ -155,11 +188,12 @@ class FVMSolver:
         den = a + b
         return np.where(den > 0, 2 * a * b / np.where(den > 0, den, 1.0), 0.0)
 
-    def _solve(self, u, H, G, rho_cp, V, dt, amb, us, h, R):
+    def _solve(self, u, H, G, G_boundary, rho_cp, V, dt, amb, h, R):
         """解单个场的隐式三对角系统（物性冻结，Thomas 算法）。
 
         u: 当前 Picard 迭代值；H: BDF2 历史组合；G: 界面系数 (N−1,)；
-        amb: 环境值（Ta 或 Ca）；us: 表面外推值；h: hT 或 hM；R: 当前半径。
+        G_boundary: 最外层单元物性；amb: 环境值（Ta 或 Ca）；h: hT 或 hM；
+        R: 当前半径。
         离散依据：控制体 i 的能量平衡
             ρc_p V_i T_i' = 2πi·k_i(T_{i+1}−T_i) − 2π(i−1)k_{i−1}(T_i−T_{i−1})，
         中心面（ξ=0）面积为 0 自然零通量，表面面用 Robin 通量 2πR·h(us−amb)。
@@ -177,25 +211,28 @@ class FVMSolver:
             b[1:-1] += fcoef[:-1] + fcoef[1:]
         b[-1] += fcoef[-1]
         d = time_coeff * H
-        d[-1] -= 2 * np.pi * R * h * (us - amb)
+        # Robin 边界采用半单元扩散阻力与表面对流阻力串联，得到
+        # h_eff=hΓ/(Γ+hR/(2N))。通量对 u_N 隐式处理，保持三对角矩阵的
+        # M-矩阵结构，避免二阶外推中的负权重破坏离散比较性质。
+        delta = R / (2.0 * N)
+        h_eff = h * G_boundary / (G_boundary + h * delta)
+        boundary_coeff = 2 * np.pi * R * h_eff
+        b[-1] += boundary_coeff
+        d[-1] += boundary_coeff * amb
         return self._thomas(a, b, c, d)
 
     @staticmethod
     def _thomas(a, b, c, d):
-        N = len(d)
-        cp = np.empty(N - 1)
-        dp = np.empty(N)
-        cp[0] = c[0] / b[0]
-        dp[0] = d[0] / b[0]
-        for i in range(1, N):
-            den = b[i] - a[i] * cp[i - 1]
-            if i < N - 1:
-                cp[i] = c[i] / den
-            dp[i] = (d[i] - a[i] * dp[i - 1]) / den
-        x = np.empty(N)
-        x[-1] = dp[-1]
-        for i in range(N - 2, -1, -1):
-            x[i] = dp[i] - cp[i] * x[i + 1]
+        """用编译 LAPACK ``dgtsv`` 解三对角系统。"""
+        _du2, _diag, _du, x, info = dgtsv(
+            np.array(a[1:], dtype=float, copy=True),
+            np.array(b, dtype=float, copy=True),
+            np.array(c[:-1], dtype=float, copy=True),
+            np.array(d, dtype=float, copy=True),
+            overwrite_dl=1, overwrite_d=1, overwrite_du=1, overwrite_b=1,
+        )
+        if info != 0:
+            raise np.linalg.LinAlgError(f"LAPACK dgtsv 求解失败，info={info}")
         return x
 
     # ---------- 自适应推进 ----------

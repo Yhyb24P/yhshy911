@@ -12,7 +12,9 @@ import xml.etree.ElementTree as ET
 
 from openpyxl import load_workbook
 
+import model1
 import model2
+import model3
 import model4
 from xlsx_io import HEADER, Q4_R_COLS, R_COLS
 
@@ -105,7 +107,9 @@ def _check_book(name, sheet_names, headers, expected_rows, first, last, step):
 
 
 def _load_meta(name):
-    with open(TABLES / name, encoding="utf-8") as f:
+    path = TABLES / name
+    _assert(path.exists(), f"缺少或尚未完成 {path}")
+    with open(path, encoding="utf-8") as f:
         return json.load(f)
 
 
@@ -117,12 +121,19 @@ def _check_event(meta, label):
 
 
 def run():
+    q1 = _load_meta("q1_meta.json")
     q2 = _load_meta("q2_meta.json")
+    q3 = _load_meta("q3_meta.json")
     q4 = _load_meta("q4_meta.json")
+    _assert(q1.get("N") == 2561, f"Q1 正式结果应使用 N=2561，实际 N={q1.get('N')}")
     _assert(q2.get("N") == 321, f"Q2/Q3 正式结果应使用 N=321，实际 N={q2.get('N')}")
+    _assert(q3.get("N") == 321, f"Q3 正式结果应使用 N=321，实际 N={q3.get('N')}")
     _assert(q4.get("N") == 321, f"Q4 正式结果应使用 N=321，实际 N={q4.get('N')}")
+    _assert(q1.get("signature") == model1._signature(2561), "Q1 缓存指纹已过期")
     _assert(q2.get("signature") == model2._signature(321), "Q2 缓存指纹已过期")
+    _assert(q3.get("signature") == model3._signature(321), "Q3 缓存指纹已过期")
     _assert(q4.get("signature") == model4._signature(321), "Q4 缓存指纹已过期")
+    _assert(q3.get("t_dry") == q2.get("t_dry"), "Q3 与 Q2 终止事件元数据不一致")
     _check_event(q2, "Q3")
     _check_event(q4, "Q4")
 
