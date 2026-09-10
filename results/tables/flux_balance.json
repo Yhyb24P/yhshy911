@@ -1,18 +1,34 @@
 {
- "signature": "8cfa358e9e15466bd25598dac73fe2f2263da37c717888ed7375d63debdf3081",
+ "signature": "cb1b499a3ee4669be976ea901f85c3217f1cc78b015948346af5765880432216",
  "N": 81,
  "t_end": 43200.0,
- "interval": 60.0,
+ "interval": 30.0,
+ "coverage": {
+  "start_s": 0.0,
+  "end_s": 43200.0,
+  "sample_interval_s": 30.0,
+  "n_intervals": 1440,
+  "n_intervals_0_4h": 480,
+  "excluded_intervals": 0,
+  "covers_all_0_4h_intervals": true,
+  "quadrature": "trapezoidal boundary-flux integral"
+ },
  "metrics": {
   "2": {
-   "max_abs": 3.706869133816696e-10,
-   "median_rel": 7.438421741128191e-06,
-   "p95_rel": 8.812923466962028e-06
+   "final_abs_closure": 4.0130871115096056e-07,
+   "max_abs_closure": 2.6377008476231173e-05,
+   "max_rel_to_12h_loss": 1.1913133345340875e-05,
+   "max_interval_residual": 2.5287315684444436e-05,
+   "max_abs_closure_0_4h": 2.6377008476231173e-05,
+   "moisture_loss_0_12h": 2.2141117463901296
   },
   "4": {
-   "max_abs": 4.761384335985825e-10,
-   "median_rel": 3.4191393290295757e-06,
-   "p95_rel": 7.504928131943105e-06
+   "final_abs_closure": 2.6947550205935755e-05,
+   "max_abs_closure": 2.6947550205935755e-05,
+   "max_rel_to_12h_loss": 1.2980731519805955e-05,
+   "max_interval_residual": 1.4616830665571331e-05,
+   "max_abs_closure_0_4h": 2.6872606464278803e-05,
+   "moisture_loss_0_12h": 2.075965454244183
   }
  }
 }

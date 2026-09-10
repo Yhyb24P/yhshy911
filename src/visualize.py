@@ -114,7 +114,7 @@ def _signature():
         TABLES / "q2_meta.json", TABLES / "q4_samples.csv", TABLES / "q4_meta.json",
         TABLES / "grid_convergence.json", TABLES / "time_convergence.json",
         TABLES / "q_sens.json", TABLES / "quality_pareto.csv",
-        TABLES / "quality_profiles.csv",
+        TABLES / "quality_profiles.csv", TABLES / "quality_grid_convergence.json",
     ], settings=("pdf", "heatmap-png", "q4-interpolate-frozen-physical-samples"))
 
 
@@ -301,9 +301,11 @@ def run():
     ax.set_xlabel("change in drying time / h")
     made += _save(fig, "sensitivity")
 
-    # F12/F13：品质 Pareto 与代表方案终点剖面。
+    # F12/F13：双目标情景与代表方案终点剖面。
     quality = pd.read_csv(TABLES / "quality_pareto.csv")
     profiles = pd.read_csv(TABLES / "quality_profiles.csv")
+    with open(TABLES / "quality_grid_convergence.json", encoding="utf-8") as f:
+        quality_grid = json.load(f)
     setup_plot()
     fig, ax = plt.subplots()
     hm_span = np.ptp(quality["hm_factor"])
@@ -313,7 +315,10 @@ def run():
                         c=quality["T_platform_C"], cmap="plasma", s=point_sizes)
     front = quality[quality["is_pareto"]].sort_values("t_dry_h")
     ax.plot(front["t_dry_h"], front["X_std_event"], "D-", color="black", lw=1,
-            ms=7, mfc="none", label="Pareto front")
+            ms=7, mfc="none", label="nondominated set")
+    fine = pd.DataFrame(row for row in quality_grid["rows"] if row["N"] == 641)
+    ax.scatter(fine["t_dry_s"] / 3600.0, fine["X_std_event"], marker="x", s=55,
+               color="tab:green", label="N=641 convergence points")
     baseline = quality[quality["is_baseline"]]
     ax.scatter(baseline["t_dry_h"], baseline["X_std_event"], marker="*", s=130,
                facecolors="none", edgecolors="black", label="measured baseline")
@@ -341,9 +346,14 @@ def run():
                       "source_sha256": {
                           "quality_pareto.csv": _sha256(TABLES / "quality_pareto.csv"),
                           "quality_profiles.csv": _sha256(TABLES / "quality_profiles.csv"),
+                          "quality_grid_convergence.json": _sha256(
+                              TABLES / "quality_grid_convergence.json"),
                       },
                       "output_sha256": {name: _sha256(FIGURES / name) for name in made},
-                      "q4_material_grid_source": "interpolation of frozen 0.1 cm physical samples"},
+                      "reconstruction_notes": {
+                          "q1_heatmaps": "frozen 0.1 cm output samples; cannot resolve the initial thin boundary layer",
+                          "q4_heatmaps": "interpolation of frozen 0.1 cm physical samples; not the raw 321-cell field",
+                      }},
                      TABLES / "visualization_meta.json")
     print(f"[visualize] 写入 {len(made)} 个图件；未运行 PDE")
 

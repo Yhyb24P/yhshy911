@@ -1,5 +1,5 @@
 {
- "signature": "792766ba5664072b6b2e4a88de9a20ad519e0963f8f1e8133a0bb4433190dd63",
+ "signature": "db1fdfd5afe2a3dd6ac524924a3df5ef33c4520d1c71abb0e51134c765a954a7",
  "files": [
   "input_environment.pdf",
   "q1_temperature_heatmap.pdf",
@@ -31,36 +31,40 @@
  ],
  "source_sha256": {
   "quality_pareto.csv": "acdf7b2ec91278bef1ce13d84dccecf6a0d8893ed17214afa8be29ce6b7621b3",
-  "quality_profiles.csv": "7ab01528cbbd775bf265dd4991cfe6fcc7e4a2d89c1f26027063a9ada32649f3"
+  "quality_profiles.csv": "7ab01528cbbd775bf265dd4991cfe6fcc7e4a2d89c1f26027063a9ada32649f3",
+  "quality_grid_convergence.json": "f52a78f363d3407374477e2866c5ae27f386959116a5dbe30a917966a830f9dc"
  },
  "output_sha256": {
-  "input_environment.pdf": "1b3eb462ef825fcfa066936892af9999ab3cd703dd6e0b1b050802ed956171b4",
-  "q1_temperature_heatmap.pdf": "4abebc7a329fc6775a1bfdccd8f49ae28cc38f228564d5e098a905bbf62d9526",
+  "input_environment.pdf": "cf04db85659802e0a0d0ef2614dbd4319f1cf095984f732e7be1f9d812f41f1a",
+  "q1_temperature_heatmap.pdf": "6944e929f2a53116bf75b0120064576d6b7e0d5b1a0aeeb6c065c25808182c90",
   "q1_temperature_heatmap.png": "6765d481b585a67db569deeae33c20002d9964a2941d409605aa541bdfab6aff",
-  "q1_moisture_heatmap.pdf": "f7517fea900c7d6990cecacf636e3f161b9c7d0fc0100c3644f2d6ed4ed8171e",
+  "q1_moisture_heatmap.pdf": "6a6ae980a1e2e2ee79afcfc748d61fa8ed6b6a1041b31263bd1ea162bd69864e",
   "q1_moisture_heatmap.png": "1439af310cdacb17123b00725219879ff18f110bef4cc178de97e64eb80c7424",
-  "q1_profiles.pdf": "883b8604a37dc8af50dee84615867c0cd962690585c840dd8ba9b24cb07c5d4e",
-  "q2_temperature_heatmap.pdf": "f1c2103a88efc9bf8197420ceca66bded5b06c5a9f7525146df3e07fece65132",
+  "q1_profiles.pdf": "50340bc7712e627104e7214fbbf23476658a6568cb5a202351a2a3d3ce70f573",
+  "q2_temperature_heatmap.pdf": "b0dc48d194fcc114937e5a6c029d896714bcc7e63e9592af3d30eab7e683b364",
   "q2_temperature_heatmap.png": "f69cec172a0a845b69371b63684028f7e92544ca95f6735b1934bca89c06412f",
-  "q2_moisture_heatmap.pdf": "77c9ae2abb23ebca0f6db11fdd94a3d26d278238e25906a615e62938cfa306f6",
+  "q2_moisture_heatmap.pdf": "0b034633426380b5af2818297f84de2d4f8e8c2ae495da273390b63befc96c64",
   "q2_moisture_heatmap.png": "9dec1195f8db758ca8c5024465f263a6e17c40be3c0f68fc0419380d8066e721",
-  "q3_moisture_heatmap.pdf": "a9cb96ac41c27ddda811c8d5b949e325317729a389582415269e0cba05b41634",
+  "q3_moisture_heatmap.pdf": "a81c9a1bcbdcc9475fd289d67bbf992955f2de03cb03c53d4613e3bc6d6391ab",
   "q3_moisture_heatmap.png": "2f69a3513c58757ee84a96b0e7fafa5e7f526e9e4ea5abc680398c4ce108aa84",
-  "q3_drying_rate.pdf": "44099c2eadf16c7e3c8b6ab3798742fc758a87e516204e91a2a789905c71143b",
-  "q3_moisture_summary.pdf": "cf200a949d09794ebdac94768484bd43b4cf9ce62aabc048e1dc9fc69132c96f",
-  "q3_profiles.pdf": "03bf7de5cfa12c2322626c9063588a5566da76f9868ac4dadab498d871468a7c",
-  "q4_physical_heatmap.pdf": "f36f50ec60c65ee0b2a7056aa325764b22c45a62fbb5a6cdc0914fbe125ac573",
+  "q3_drying_rate.pdf": "4097a494aa4b7e2bcc4ab350e5d33b0f8e6b105bdc60cd2f39d4f75c2ea0f3bf",
+  "q3_moisture_summary.pdf": "eb1f3ff8e885475b12b75678486966f02a50c19274608e875b4434bdca3bc0a1",
+  "q3_profiles.pdf": "8a952b776ce0559536657c72a7fe36113c63e43c7e9b8935488f16b1ba16260b",
+  "q4_physical_heatmap.pdf": "f53ae28240bf2ba48d327ba285b6f87d3165210ba096f596431a7392ed4b3f3b",
   "q4_physical_heatmap.png": "f85bc40e05575bb4108b148a4dfdea638d6712b14083183ae7099ef4d3cbee19",
-  "q4_material_heatmap.pdf": "65abd1eb9083f78a7aac9cc98af43f9c690cada793587bc741c8e8d1eb09fa8e",
+  "q4_material_heatmap.pdf": "7d573e672e58bf127aa6c8a5951070403083af86294185a9977227a252e89f5e",
   "q4_material_heatmap.png": "a1200cb656c4398e779230632a77f0cfc8124cbf15ee2bced68a8169bf61de6e",
-  "q4_profiles.pdf": "97b8198f1eb0b54d0626086ea0a1034c1aa4c5d1da240b47b4481de709ad9ba8",
-  "q4_shrinkage_scale.pdf": "ac8867a0ec9c2f4978a1dac391fc0e7be478e340d069d2b801e6e7c1c0bfd0e6",
-  "convergence.pdf": "ad44f6a41278c5e884a2bfbfa8d22c37d6a13eea03685fc33b535af8bb44fd12",
-  "sensitivity.pdf": "802b99214c7da1a25e516ece0cc3c2cd16d0745fbbc03f90d984455aed3e1855",
-  "pareto_time_uniformity.pdf": "9200b3c59b89f670d6dd6b86b81b360cdc9a9b432a1e7bc8147cc580c496e8a2",
-  "pareto_time_uniformity.png": "c8101fb7ac36aa6f2f88be3627251017defc99556bf8f19d988a357ab2b68799",
-  "pareto_profiles.pdf": "02052420ca63340185fc305d0a44a5be78f2f111351e8922dcbd3514dfc284d7",
+  "q4_profiles.pdf": "756ff8adc8cd0e3bccb971a1ecf8131da51672101583988fce51598916f2ccdf",
+  "q4_shrinkage_scale.pdf": "0cf0ba2b57720c45fb85b9f09f59ceb4fb53c7b42507791921d8ee1d6fd0c7ea",
+  "convergence.pdf": "f52f990e7739150a32ca00c4bf73d7d7edb6ff54543fd61f0da1d705a45a0754",
+  "sensitivity.pdf": "b1e9882d56a412e684807e76eb1a7f921daa4c3e7bf705ea3730a4f9317ec329",
+  "pareto_time_uniformity.pdf": "9c1a2f726b0d62c1a6eee5b23293e1d5b956ce232f6734b8dd60e67c7e40964f",
+  "pareto_time_uniformity.png": "ad53dc1d04aaa4a5b5931bce2cb5a71508e1c2ef70e73074316363f6b8a31daf",
+  "pareto_profiles.pdf": "b7f1a58ac91bb4e91f1d807fea5a3936ca911569f32c92afed2df54a46186309",
   "pareto_profiles.png": "89487f446b7409cd760840925f94a40910b8361a4b810d750abc6d3e3ad8479e"
  },
- "q4_material_grid_source": "interpolation of frozen 0.1 cm physical samples"
+ "reconstruction_notes": {
+  "q1_heatmaps": "frozen 0.1 cm output samples; cannot resolve the initial thin boundary layer",
+  "q4_heatmaps": "interpolation of frozen 0.1 cm physical samples; not the raw 321-cell field"
+ }
 }

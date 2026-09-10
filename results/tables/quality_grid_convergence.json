@@ -1,0 +1,87 @@
+{
+ "signature": "6ee772d00c4eb5dd2fd740ecb14704f7387ddb619c0dce7c0443e3ae4ca66511",
+ "Ns": [
+  321,
+  641
+ ],
+ "temperatures_C": [
+  48.0,
+  50.165,
+  52.0
+ ],
+ "event_interval_s": 1.0,
+ "rows": [
+  {
+   "T_platform_C": 48.0,
+   "N": 321,
+   "t_dry_s": 220732.918,
+   "X_std_event": 0.01942991146,
+   "X_max_event": 0.149999999
+  },
+  {
+   "T_platform_C": 50.165,
+   "N": 321,
+   "t_dry_s": 205885.4961,
+   "X_std_event": 0.01942734126,
+   "X_max_event": 0.1499999997
+  },
+  {
+   "T_platform_C": 52.0,
+   "N": 321,
+   "t_dry_s": 194379.1836,
+   "X_std_event": 0.01942489091,
+   "X_max_event": 0.1500000007
+  },
+  {
+   "T_platform_C": 48.0,
+   "N": 641,
+   "t_dry_s": 220670.76171875,
+   "X_std_event": 0.019440971541751336,
+   "X_max_event": 0.15000000035729522
+  },
+  {
+   "T_platform_C": 50.165,
+   "N": 641,
+   "t_dry_s": 205832.90234375,
+   "X_std_event": 0.019437772876159765,
+   "X_max_event": 0.15000000049360515
+  },
+  {
+   "T_platform_C": 52.0,
+   "N": 641,
+   "t_dry_s": 194333.64453125,
+   "X_std_event": 0.019434775021954887,
+   "X_max_event": 0.15000000047897608
+  }
+ ],
+ "comparisons": [
+  {
+   "T_platform_C": 48.0,
+   "delta_t_s_641_minus_321": -62.15628125000512,
+   "delta_sigma_641_minus_321": 1.1060081751335105e-05,
+   "delta_sigma_abs": 1.1060081751335105e-05
+  },
+  {
+   "T_platform_C": 50.165,
+   "delta_t_s_641_minus_321": -52.59375624998938,
+   "delta_sigma_641_minus_321": 1.0431616159763818e-05,
+   "delta_sigma_abs": 1.0431616159763818e-05
+  },
+  {
+   "T_platform_C": 52.0,
+   "delta_t_s_641_minus_321": -45.53906874998938,
+   "delta_sigma_641_minus_321": 9.884111954888003e-06,
+   "delta_sigma_abs": 9.884111954888003e-06
+  }
+ ],
+ "conclusion": {
+  "sigma_signal_baseline_to_52": 2.450350000002266e-06,
+  "sigma_change_52_minus_baseline_N321": -2.450350000002266e-06,
+  "sigma_change_52_minus_baseline_N641": -2.997854204878081e-06,
+  "max_grid_delta_sigma": 1.1060081751335105e-05,
+  "grid_delta_to_signal_ratio": 4.513674271563196,
+  "direction_consistent": true,
+  "uniformity_change_resolved": false,
+  "resolution_rule": "same change direction on N=321/641 and max |sigma_641-sigma_321| < 0.25 * |sigma_321(52)-sigma_321(baseline)|"
+ }
+}

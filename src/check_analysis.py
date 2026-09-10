@@ -34,8 +34,16 @@ def run():
     _assert(flux["signature"] == validate_metrics._signature(
         flux["N"], flux["t_end"], flux["interval"]),
         "积分通量检查内容指纹已过期")
+    expected_pre_platform = int(round(14400.0 / flux["interval"]))
+    _assert(flux["coverage"]["start_s"] == 0
+            and flux["coverage"]["end_s"] >= 43200
+            and flux["coverage"]["excluded_intervals"] == 0
+            and flux["coverage"]["covers_all_0_4h_intervals"]
+            and flux["coverage"]["n_intervals_0_4h"] == expected_pre_platform,
+            "积分通量检查未覆盖前 4 h 全部区间")
     for q, values in flux["metrics"].items():
-        _assert(values["p95_rel"] <= 0.02 and values["max_abs"] >= 0,
+        _assert(values["max_rel_to_12h_loss"] <= 1e-4
+                and values["max_abs_closure_0_4h"] >= 0,
                 f"Q{q} 积分通量检查未通过")
 
     with open(TABLES / "quality_pareto_meta.json", encoding="utf-8") as f:
@@ -91,6 +99,53 @@ def run():
             and df["representative"].fillna("").str.contains("most_uniform").any()
             and df["representative"].fillna("").str.contains("compromise").any(),
             "缺少最快、最均匀或折中代表方案")
+
+    with open(TABLES / "quality_grid_convergence.json", encoding="utf-8") as f:
+        quality_grid = json.load(f)
+    Ns = tuple(quality_grid["Ns"])
+    temperatures = tuple(quality_grid["temperatures_C"])
+    _assert(quality_grid["signature"] ==
+            validate_metrics._quality_grid_signature(Ns, temperatures),
+            "品质指标网格收敛指纹已过期")
+    _assert(Ns == (321, 641) and len(quality_grid["rows"]) == 6,
+            "品质指标网格收敛配置或行数错误")
+    _assert(temperatures == (48.0, 50.165, 52.0)
+            and len(quality_grid["comparisons"]) == 3,
+            "品质指标网格收敛温度配置错误")
+    _assert(all(abs(row["X_max_event"] - 0.15) <= 2e-8
+                for row in quality_grid["rows"]),
+            "品质指标网格收敛存在未定位到阈值的事件")
+    for comparison in quality_grid["comparisons"]:
+        rows = [row for row in quality_grid["rows"]
+                if row["T_platform_C"] == comparison["T_platform_C"]]
+        coarse = next(row for row in rows if row["N"] == 321)
+        fine = next(row for row in rows if row["N"] == 641)
+        signed_delta = fine["X_std_event"] - coarse["X_std_event"]
+        _assert(abs(comparison["delta_sigma_641_minus_321"] - signed_delta) < 1e-14
+                and abs(comparison["delta_sigma_abs"] - abs(signed_delta)) < 1e-14,
+                "品质标准差网格差重算不一致")
+    changes = {}
+    for N in Ns:
+        changes[N] = (next(row["X_std_event"] for row in quality_grid["rows"]
+                           if row["N"] == N and row["T_platform_C"] == 52.0)
+                      - next(row["X_std_event"] for row in quality_grid["rows"]
+                             if row["N"] == N and row["T_platform_C"] == 50.165))
+    signal = abs(changes[321])
+    max_grid_delta = max(item["delta_sigma_abs"]
+                         for item in quality_grid["comparisons"])
+    resolution = quality_grid["conclusion"]
+    _assert(abs(resolution["sigma_signal_baseline_to_52"] - signal) < 1e-14
+            and abs(resolution["sigma_change_52_minus_baseline_N321"]
+                    - changes[321]) < 1e-14
+            and abs(resolution["sigma_change_52_minus_baseline_N641"]
+                    - changes[641]) < 1e-14
+            and abs(resolution["max_grid_delta_sigma"] - max_grid_delta) < 1e-14
+            and abs(resolution["grid_delta_to_signal_ratio"]
+                    - max_grid_delta / signal) < 1e-12
+            and resolution["direction_consistent"] == (changes[321] * changes[641] > 0)
+            and resolution["uniformity_change_resolved"]
+            == (changes[321] * changes[641] > 0 and max_grid_delta / signal < 0.25),
+            "品质指标可辨识结论与原始网格数据不一致")
     visualization_meta = TABLES / "visualization_meta.json"
     if visualization_meta.exists():
         with open(visualization_meta, encoding="utf-8") as f:
@@ -105,8 +160,9 @@ def run():
                     f"可视化文件缺失或异常：{name}")
             _assert(_sha256(path) == visual["output_sha256"][name],
                     f"可视化文件内容校验失败：{name}")
-    print(f"[通过] 品质分析：{len(df)} 个情景，{expected_pareto.sum()} 个 Pareto 点，"
-          "事件/面积加权指标/代表剖面均一致")
+    print(f"[通过] 品质分析：{len(df)} 个情景，{expected_pareto.sum()} 个非支配点；"
+          f"品质网格误差/温度信号={resolution['grid_delta_to_signal_ratio']:.2f}，"
+          f"可辨识={resolution['uniformity_change_resolved']}")
 
 
 if __name__ == "__main__":
