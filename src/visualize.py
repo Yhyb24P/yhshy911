@@ -6,28 +6,54 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+from cycler import cycler
 from openpyxl import load_workbook
 
 from metrics import drying_rate_from_flux, profile_moments
 from props import DryingRoom, Radius, R0
 from solver import map_to_physical, surface_from_state
-from utils import atomic_json_dump, input_signature, setup_plot
+from utils import atomic_json_dump, input_signature, setup_plot as _base_setup_plot
 
 
 ROOT = Path(__file__).resolve().parent.parent
 TABLES = ROOT / "results" / "tables"
 FIGURES = ROOT / "results" / "figures"
 DATA = ROOT / "data"
+COLORS = ["#0072B2", "#D55E00", "#009E73", "#CC79A7", "#E69F00", "#56B4E9"]
+LINESTYLES = ["-", "--", "-.", ":", (0, (5, 1)), (0, (3, 1, 1, 1))]
+MARKERS = ["o", "s", "^", "D", "v", "P"]
+
+
+def setup_plot():
+    """应用适合双栏论文图的色盲友好、冗余编码样式。"""
+    _base_setup_plot()
+    plt.rcParams.update({
+        "axes.prop_cycle": cycler(color=COLORS),
+        "font.sans-serif": ["Noto Sans CJK SC", "Microsoft YaHei", "SimHei",
+                            "WenQuanYi Zen Hei", "DejaVu Sans"],
+        "axes.unicode_minus": False,
+        "font.size": 9,
+        "axes.labelsize": 9,
+        "xtick.labelsize": 8,
+        "ytick.labelsize": 8,
+        "legend.fontsize": 8,
+        "lines.linewidth": 1.5,
+        "pdf.fonttype": 42,
+        "ps.fonttype": 42,
+    })
 
 
 def _save(fig, name, png=False):
     fig.tight_layout()
     pdf = FIGURES / f"{name}.pdf"
-    fig.savefig(pdf, bbox_inches="tight")
+    fig.savefig(pdf, bbox_inches="tight",
+                metadata={"Creator": "CUMCM2026-A visualize.py",
+                          "CreationDate": None, "ModDate": None})
     files = [pdf.name]
     if png:
         raster = FIGURES / f"{name}.png"
-        fig.savefig(raster, dpi=300, bbox_inches="tight")
+        fig.savefig(raster, dpi=300, bbox_inches="tight",
+                    metadata={"Software": "CUMCM2026-A visualize.py"})
         files.append(raster.name)
     plt.close(fig)
     return files
@@ -54,8 +80,9 @@ def _heatmap(times, coordinates, values, xlabel, ylabel, color_label, name,
             ax.contour(times, coordinates, np.asarray(values).T,
                        levels=[contour], colors="white", linewidths=1.0)
     if boundary is not None:
-        ax.plot(times, boundary, color="black", lw=1.2, label="R(t)")
+        ax.plot(times, boundary, color="black", lw=1.2, label="边界 $R(t)$")
         ax.legend()
+    ax.grid(False)
     ax.set_xlabel(xlabel)
     ax.set_ylabel(ylabel)
     return _save(fig, name, png=True)
@@ -127,17 +154,20 @@ def run():
     setup_plot()
     fig, ax1 = plt.subplots(figsize=(7.2, 4.2))
     horizon = np.linspace(0, 12 * 3600, 721)
-    ax1.plot(room.times / 3600, room.Ta_data, "o", ms=3, label="measured T_a")
-    ax1.plot(horizon / 3600, room.Ta(horizon), lw=1.5, label="interpolated/platform T_a")
-    ax1.set_xlabel("time / h")
-    ax1.set_ylabel("ambient temperature / °C")
+    ax1.plot(room.times / 3600, room.Ta_data, "o", ms=3, markevery=8,
+             label="实测 $T_a$")
+    ax1.plot(horizon / 3600, room.Ta(horizon), lw=1.5,
+             label="$T_a$ 插值及平台延拓")
+    ax1.set_xlabel("时间 / h")
+    ax1.set_ylabel("烘房温度 $T_a$ / °C")
     ax2 = ax1.twinx()
-    ax2.plot(room.times / 3600, room.Ca_data, "s", ms=3, color="tab:blue", label="measured C_a")
-    ax2.plot(horizon / 3600, room.Ca(horizon), color="tab:blue", lw=1.5,
-             label="interpolated/platform C_a")
-    ax2.set_ylabel("ambient moisture potential / kg kg$^{-1}$")
+    ax2.plot(room.times / 3600, room.Ca_data, "s", ms=3, markevery=8,
+             color=COLORS[2], label="实测 $C_a$")
+    ax2.plot(horizon / 3600, room.Ca(horizon), color=COLORS[2], lw=1.5, ls="--",
+             label="$C_a$ 插值及平台延拓")
+    ax2.set_ylabel("环境水分势 $C_a$ / kg·kg$^{-1}$")
     lines = ax1.lines + ax2.lines
-    ax1.legend(lines, [line.get_label() for line in lines], fontsize=8)
+    ax1.legend(lines, [line.get_label() for line in lines], ncol=2, loc="lower right")
     made += _save(fig, "input_environment")
 
     # F2/F3：Q1 冻结轨迹。
@@ -145,22 +175,26 @@ def run():
     radii = np.arange(0.0, 2.01, 0.1)
     sample = q1.iloc[::5]
     for prefix, name, label, cmap, initial in (
-        ("T", "q1_temperature_heatmap", "T / °C", "magma", 28.0),
-        ("X", "q1_moisture_heatmap", "X / kg kg$^{-1}$", "viridis", 2.55),
+        ("T", "q1_temperature_heatmap", "温度 $T$ / °C", "magma", 28.0),
+        ("X", "q1_moisture_heatmap", "干基含水率 $X$ / kg·kg$^{-1}$", "viridis", 2.55),
     ):
         values = sample[[f"{prefix}_{r:.1f}" for r in radii]].to_numpy()
         times, values = _prepend_initial(sample["t"].to_numpy() / 60.0, values, initial)
-        made += _heatmap(times, radii, values, "time / min", "radius / cm", label,
+        made += _heatmap(times, radii, values, "时间 / min", "半径 / cm", label,
                          name, cmap=cmap)
     setup_plot()
-    fig, axes = plt.subplots(1, 2, figsize=(9.5, 4.0))
-    for seconds in (600, 1200, 1800):
+    fig, axes = plt.subplots(1, 2, figsize=(7.2, 3.2))
+    for j, seconds in enumerate((600, 1200, 1800)):
         row = q1[q1["t"] == seconds].iloc[0]
-        axes[0].plot(radii, [row[f"T_{r:.1f}"] for r in radii], label=f"{seconds/60:g} min")
-        axes[1].plot(radii, [row[f"X_{r:.1f}"] for r in radii], label=f"{seconds/60:g} min")
-    axes[0].set(xlabel="radius / cm", ylabel="T / °C")
-    axes[1].set(xlabel="radius / cm", ylabel="X / kg kg$^{-1}$")
-    for ax in axes:
+        style = {"color": COLORS[j], "ls": LINESTYLES[j]}
+        axes[0].plot(radii, [row[f"T_{r:.1f}"] for r in radii],
+                     label=f"{seconds/60:g} min", **style)
+        axes[1].plot(radii, [row[f"X_{r:.1f}"] for r in radii],
+                     label=f"{seconds/60:g} min", **style)
+    axes[0].set(xlabel="半径 / cm", ylabel="温度 $T$ / °C")
+    axes[1].set(xlabel="半径 / cm", ylabel="干基含水率 $X$ / kg·kg$^{-1}$")
+    for label, ax in zip(("(a)", "(b)"), axes):
+        ax.text(0.02, 0.98, label, transform=ax.transAxes, va="top", fontweight="bold")
         ax.legend()
     made += _save(fig, "q1_profiles")
 
@@ -171,32 +205,33 @@ def run():
     q2_3h = q2[q2["t"] <= 10800]
     X2 = q2_3h[[f"X_{r:.1f}" for r in radii]].to_numpy()
     tx2, X2 = _prepend_initial(q2_3h["t"].to_numpy() / 3600.0, X2, 2.55)
-    made += _heatmap(t2, r2, T2, "time / h", "radius / cm", "T / °C",
+    made += _heatmap(t2, r2, T2, "时间 / h", "半径 / cm", "温度 $T$ / °C",
                      "q2_temperature_heatmap", cmap="magma")
-    made += _heatmap(tx2, radii, X2, "time / h", "radius / cm",
-                     "X / kg kg$^{-1}$", "q2_moisture_heatmap")
+    made += _heatmap(tx2, radii, X2, "时间 / h", "半径 / cm",
+                     "干基含水率 $X$ / kg·kg$^{-1}$", "q2_moisture_heatmap")
 
     # F5/F6：Q3 全程场，以及面积平均含水率–通量干燥速率。
     X3 = q2[[f"X_{r:.1f}" for r in radii]].to_numpy()
     t3, X3 = _prepend_initial(q2["t"].to_numpy() / 3600.0, X3, 2.55)
-    made += _heatmap(t3, radii, X3, "time / h", "radius / cm",
-                     "X / kg kg$^{-1}$", "q3_moisture_heatmap", contour=0.15)
+    made += _heatmap(t3, radii, X3, "时间 / h", "半径 / cm",
+                     "干基含水率 $X$ / kg·kg$^{-1}$", "q3_moisture_heatmap", contour=0.15)
     Xmean, _ = profile_moments(X3, radii * 1e-2, R0)
     Ca = room.Ca(t3 * 3600.0)
     rate = drying_rate_from_flux(X3[:, -1], Ca, R0)
     setup_plot()
     fig, ax = plt.subplots()
     ax.plot(Xmean, rate * 3600.0)
-    ax.set_xlabel("area-weighted mean X / kg kg$^{-1}$")
-    ax.set_ylabel("drying rate / h$^{-1}$")
+    ax.invert_xaxis()
+    ax.set_xlabel(r"截面积加权平均含水率 $\bar X$ / kg·kg$^{-1}$")
+    ax.set_ylabel("平均干燥速率 / h$^{-1}$")
     made += _save(fig, "q3_drying_rate")
     setup_plot()
     fig, ax = plt.subplots()
-    ax.plot(t3, X3[:, 0], label="center")
-    ax.plot(t3, Xmean, label="area-weighted mean")
-    ax.plot(t3, X3[:, -1], label="surface")
-    ax.set_xlabel("time / h")
-    ax.set_ylabel("X / kg kg$^{-1}$")
+    ax.plot(t3, X3[:, 0], color=COLORS[0], ls="-", label="中心")
+    ax.plot(t3, Xmean, color=COLORS[1], ls="--", label="截面积加权平均")
+    ax.plot(t3, X3[:, -1], color=COLORS[2], ls="-.", label="表面")
+    ax.set_xlabel("时间 / h")
+    ax.set_ylabel("干基含水率 $X$ / kg·kg$^{-1}$")
     ax.legend()
     made += _save(fig, "q3_moisture_summary")
 
@@ -208,12 +243,14 @@ def run():
         np.asarray(q2_meta["X_event"]), R0)[1]
     setup_plot()
     fig, ax = plt.subplots()
-    for hour in (6, 18, 36, 54):
+    for j, hour in enumerate((6, 18, 36, 54)):
         row = q2[q2["t"] == hour * 3600].iloc[0]
-        ax.plot(radii, [row[f"X_{r:.1f}"] for r in radii], label=f"{hour} h")
-    ax.plot(radii, q3_event, lw=2, label=f"event {q2_meta['t_dry']/3600:.2f} h")
-    ax.set_xlabel("radius / cm")
-    ax.set_ylabel("X / kg kg$^{-1}$")
+        ax.plot(radii, [row[f"X_{r:.1f}"] for r in radii], label=f"{hour} h",
+                color=COLORS[j], ls=LINESTYLES[j])
+    ax.plot(radii, q3_event, lw=2, color=COLORS[4], ls=LINESTYLES[4],
+            label=f"终止时刻 {q2_meta['t_dry']/3600:.2f} h")
+    ax.set_xlabel("半径 / cm")
+    ax.set_ylabel("干基含水率 $X$ / kg·kg$^{-1}$")
     ax.legend(fontsize=8)
     made += _save(fig, "q3_profiles")
 
@@ -221,10 +258,10 @@ def run():
     q4 = pd.read_csv(TABLES / "q4_samples.csv")
     r_grid, xi_grid, q4_phys, q4_mat, R_cm = _q4_grids(q4)
     tq4 = q4["t"].to_numpy() / 3600.0
-    made += _heatmap(tq4, r_grid, q4_phys, "time / h", "physical radius / cm",
-                     "X / kg kg$^{-1}$", "q4_physical_heatmap", boundary=R_cm)
-    made += _heatmap(tq4, xi_grid, q4_mat, "time / h", "material coordinate ξ",
-                     "X / kg kg$^{-1}$", "q4_material_heatmap")
+    made += _heatmap(tq4, r_grid, q4_phys, "时间 / h", "物理半径 / cm",
+                     "干基含水率 $X$ / kg·kg$^{-1}$", "q4_physical_heatmap", boundary=R_cm)
+    made += _heatmap(tq4, xi_grid, q4_mat, "时间 / h", r"材料坐标 $\xi$",
+                     "干基含水率 $X$ / kg·kg$^{-1}$", "q4_material_heatmap")
     with open(TABLES / "q4_meta.json", encoding="utf-8") as f:
         q4_meta = json.load(f)
     event_R = float(Radius(DATA / "附件2.xlsx")(q4_meta["t_dry"]))
@@ -235,12 +272,14 @@ def run():
         np.asarray(q4_meta["X_event"]), event_R)[1]
     setup_plot()
     fig, ax = plt.subplots()
-    for hour in (6, 18, 36, 48):
+    for j, hour in enumerate((6, 18, 36, 48)):
         k = int(np.argmin(np.abs(tq4 - hour)))
-        ax.plot(r_grid, q4_phys[k], label=f"{hour} h")
-    ax.plot(event_r_cm, q4_event, lw=2, label=f"event {q4_meta['t_dry']/3600:.2f} h")
-    ax.set_xlabel("physical radius / cm")
-    ax.set_ylabel("X / kg kg$^{-1}$")
+        ax.plot(r_grid, q4_phys[k], label=f"{hour} h",
+                color=COLORS[j], ls=LINESTYLES[j])
+    ax.plot(event_r_cm, q4_event, lw=2, color=COLORS[4], ls=LINESTYLES[4],
+            label=f"终止时刻 {q4_meta['t_dry']/3600:.2f} h")
+    ax.set_xlabel("物理半径 / cm")
+    ax.set_ylabel("干基含水率 $X$ / kg·kg$^{-1}$")
     ax.legend(fontsize=8)
     made += _save(fig, "q4_profiles")
 
@@ -252,14 +291,16 @@ def run():
     setup_plot()
     fig, ax1 = plt.subplots()
     ax1.plot(raw_radius["时间"] / 3600, raw_radius["半径"], "o", ms=2.5,
-             label="measured radius")
-    ax1.plot(tr / 3600, R * 100, label="PCHIP R(t)")
-    ax1.set_xlabel("time / h")
-    ax1.set_ylabel("radius / cm")
+             color=COLORS[0], markevery=8,
+             label="实测半径")
+    ax1.plot(tr / 3600, R * 100, color=COLORS[1], ls="--", label="PCHIP 插值 $R(t)$")
+    ax1.set_xlabel("时间 / h")
+    ax1.set_ylabel("半径 / cm")
     ax2 = ax1.twinx()
-    ax2.plot(tr / 3600, R / R0, color="tab:green", label="λ=R/R0")
-    ax2.plot(tr / 3600, (R0 / R) ** 2, color="tab:red", label="G_R=(R0/R)^2")
-    ax2.set_ylabel("dimensionless shrinkage / diffusion scale")
+    ax2.plot(tr / 3600, R / R0, color=COLORS[2], ls="-.", label="λ=R/R0")
+    ax2.plot(tr / 3600, (R0 / R) ** 2, color=COLORS[3], ls=":",
+             label="G_R=(R0/R)^2")
+    ax2.set_ylabel("无量纲收缩量 / 扩散尺度")
     lines = ax1.lines + ax2.lines
     ax1.legend(lines, [line.get_label() for line in lines], fontsize=8)
     made += _save(fig, "q4_shrinkage_scale")
@@ -270,15 +311,19 @@ def run():
     with open(TABLES / "time_convergence.json", encoding="utf-8") as f:
         temporal = json.load(f)["t_dry_s"]
     setup_plot()
-    fig, axes = plt.subplots(1, 2, figsize=(9.5, 4.0))
-    for q in ("3", "4"):
+    fig, axes = plt.subplots(1, 2, figsize=(7.2, 3.2))
+    for j, q in enumerate(("3", "4")):
         Ns = np.array(sorted(map(int, grid[q])))
-        axes[0].plot(Ns, [grid[q][str(n)] / 3600 for n in Ns], "o-", label=f"Q{q}")
+        style = {"color": COLORS[j], "marker": MARKERS[j], "ls": LINESTYLES[j]}
+        scenario = "固定半径" if q == "3" else "实测收缩"
+        axes[0].plot(Ns, [grid[q][str(n)] / 3600 for n in Ns], label=scenario, **style)
         dts = np.array(sorted(map(float, temporal[q]), reverse=True))
-        axes[1].plot(dts, [temporal[q][str(dt)] / 3600 for dt in dts], "o-", label=f"Q{q}")
-    axes[0].set(xlabel="N", ylabel="drying time / h")
-    axes[1].set(xlabel="maximum time step / s", ylabel="drying time / h")
-    for ax in axes:
+        axes[1].plot(dts, [temporal[q][str(dt)] / 3600 for dt in dts],
+                     label=scenario, **style)
+    axes[0].set(xlabel="网格数 $N$", ylabel="终止时间 / h")
+    axes[1].set(xlabel="最大时间步 / s", ylabel="终止时间 / h")
+    for label, ax in zip(("(a)", "(b)"), axes):
+        ax.text(0.02, 0.98, label, transform=ax.transAxes, va="top", fontweight="bold")
         ax.legend()
     made += _save(fig, "convergence")
 
@@ -290,15 +335,21 @@ def run():
     for group in ("hT", "hm"):
         for key, value in sens[group].items():
             if float(key) != 1.0:
-                items.append((f"{group}×{key}", (value - base) / 3600))
+                symbol = "$h_T$" if group == "hT" else "$h_m$"
+                items.append((f"{symbol}×{key}", (value - base) / 3600))
     for key, value in sens["platform"].items():
-        items.append((key, (value - base) / 3600))
+        platform_labels = {
+            "cool_humid": "低温高湿", "hot_dry": "高温低湿",
+            "Ta_-2C": "$T_a-2$ °C", "Ta_+2C": "$T_a+2$ °C",
+            "Ca_x0.9": "$C_a×0.9$", "Ca_x1.1": "$C_a×1.1$",
+        }
+        items.append((platform_labels.get(key, key), (value - base) / 3600))
     setup_plot()
     fig, ax = plt.subplots(figsize=(7.2, 5.2))
     labels, changes = zip(*sorted(items, key=lambda item: item[1]))
     ax.barh(labels, changes, color=["tab:blue" if x < 0 else "tab:orange" for x in changes])
     ax.axvline(0, color="black", lw=0.8)
-    ax.set_xlabel("change in drying time / h")
+    ax.set_xlabel("终止时间变化 / h")
     made += _save(fig, "sensitivity")
 
     # F12/F13：双目标情景与代表方案终点剖面。
@@ -315,16 +366,21 @@ def run():
                         c=quality["T_platform_C"], cmap="plasma", s=point_sizes)
     front = quality[quality["is_pareto"]].sort_values("t_dry_h")
     ax.plot(front["t_dry_h"], front["X_std_event"], "D-", color="black", lw=1,
-            ms=7, mfc="none", label="nondominated set")
+            ms=7, mfc="none", label="非支配集合")
     fine = pd.DataFrame(row for row in quality_grid["rows"] if row["N"] == 641)
     ax.scatter(fine["t_dry_s"] / 3600.0, fine["X_std_event"], marker="x", s=55,
-               color="tab:green", label="N=641 convergence points")
+               color=COLORS[2], label="$N=641$ 收敛检查点")
     baseline = quality[quality["is_baseline"]]
     ax.scatter(baseline["t_dry_h"], baseline["X_std_event"], marker="*", s=130,
-               facecolors="none", edgecolors="black", label="measured baseline")
-    fig.colorbar(points, ax=ax, label="platform temperature / °C")
-    ax.set_xlabel("drying time / h")
-    ax.set_ylabel("area-weighted σ_X at event")
+               facecolors="none", edgecolors="black", label="实测平台基准")
+    fig.colorbar(points, ax=ax, label="平台温度 / °C")
+    ax.set_xlabel("终止时间 / h")
+    ax.set_ylabel(r"终止时刻截面积加权标准差 $\sigma_X$")
+    ratio = quality_grid["conclusion"]["grid_delta_to_signal_ratio"]
+    ax.text(0.03, 0.04, f"均匀性趋势未通过网格分辨\n"
+            f"最大网格差 / 温度信号 = {ratio:.2f}",
+            transform=ax.transAxes, va="bottom", fontsize=8,
+            bbox={"facecolor": "white", "edgecolor": "0.7", "alpha": 0.9})
     ax.legend()
     made += _save(fig, "pareto_time_uniformity", png=True)
 
@@ -333,12 +389,16 @@ def run():
     representatives = quality[quality["representative"].fillna("") != ""]
     for _, scenario in representatives.iterrows():
         profile = profiles[profiles["scenario"] == scenario["scenario"]]
+        labels = scenario["representative"].split("+")
+        role_map = {"fastest": "最快", "most_uniform": "最均匀", "compromise": "折中"}
+        role = ("全部代表方案" if len(labels) == 3
+                else "、".join(role_map.get(label, label) for label in labels))
         ax.plot(profile["r_cm"], profile["X_event"],
-                label=(f"{scenario['representative']} "
-                       f"({scenario['T_platform_C']:.3g} °C, h_m×{scenario['hm_factor']:g})"))
+                label=(f"{role}: {scenario['T_platform_C']:.3g} °C, "
+                       f"$h_m$×{scenario['hm_factor']:g}"))
     ax.axhline(0.15, color="gray", ls="--", lw=1)
-    ax.set_xlabel("radius / cm")
-    ax.set_ylabel("X at drying event / kg kg$^{-1}$")
+    ax.set_xlabel("半径 / cm")
+    ax.set_ylabel("终止时刻干基含水率 $X$ / kg·kg$^{-1}$")
     ax.legend(fontsize=8)
     made += _save(fig, "pareto_profiles", png=True)
 
