@@ -1,170 +1,291 @@
 # 药材烘干过程的热湿耦合数值模拟
 
-本项目针对圆柱形药材的热风烘干过程，建立一维轴对称温度–水分传递模型，计算药材内部温度与干基含水率的径向时空分布，并通过连续事件定位确定烘干终止时间。模型同时覆盖固定尺寸烘干和实测半径收缩条件下的移动域计算。
-
-## 当前状态
-
-2026-09-11 的冻结前审计发现，原 Robin 边界用 `1.5u_N−0.5u_{N−1}` 重构表面值时，负权重会在强水分边界层下削弱离散比较性质。求解器现已改用半单元扩散阻力与表面对流阻力串联的隐式边界通量，并以编译 LAPACK 内核替代 Python Thomas 循环。P0 专项验证、空间与时间收敛、敏感性分析及四个正式工作簿均已按当前代码重新完成。
+本项目针对圆柱形药材的热风烘干过程，建立一维轴对称温度—水分耦合模型，计算温度与干基含水率的径向时空分布，并通过连续事件定位确定烘干终止时间。模型覆盖固定半径和实测半径收缩两类工况，提供正式 Excel 结果、数值验证、敏感性分析以及可复现图表。
 
 ## 主要结果
 
-终止条件为药材所有位置的干基含水率均不高于 `0.15 kg/kg`。Q1 因最早期强边界层采用 N=2561、最大时间步 0.03125 s；Q2–Q4 采用 N=321，并用 N=641 结果量化事件时间空间误差。
+烘干终止条件为
 
-| 工况 | 几何与物性 | 终止时间 / s | 终止时间 / h |
+$$
+\max_{0\le r\le R(t)} X(r,t)\le 0.15,
+$$
+
+其中 $X$ 表示干基含水率，单位为 $\mathrm{kg\,kg^{-1}}$。
+
+| 工况 | 几何描述 | 终止时间 / s | 终止时间 / h |
 |---|---|---:|---:|
-| 固定半径 | 固定 `R = 2 cm`，变物性 | 205885.4961 | 57.1904 |
-| 实测收缩 | 实测 `R(t)`，移动域变物性 | 182964.6643 | 50.8235 |
+| 固定半径 | $R=2.00\ \mathrm{cm}$ | 205885.4961 | 57.1904 |
+| 实测收缩 | 时变半径 $R(t)$ | 182964.6643 | 50.8235 |
 
-固定半径工况与收缩工况采用不同的经验物性关系，因此两者的时间差不能单独归因于几何收缩。项目另保留同一组物性下的固定半径反事实计算，用于分析扩散路径缩短的影响。
+固定半径工况与收缩工况采用不同的经验物性关系，因此两者的终止时间差不能完全归因于几何收缩。在相同收缩工况物性下，固定半径反事实计算的终止时间为 $129.11\ \mathrm{h}$，表明扩散路径缩短是收缩工况加速干燥的重要因素。
 
-四个正式 Excel 结果已通过内容指纹、结构、格式、完整时间轴和数值内容抽查：
+## 环境与几何输入
 
-| 文件 | 内容 | 数据行 | 时间范围 | 时间步长 |
-|---|---|---:|---:|---:|
-| `result1.xlsx` | 预热阶段温度与含水率 | 1800 | 1–1800 s | 1 s |
-| `result2.xlsx` | 固定半径完整烘干过程 | 205885 | 1–205885 s | 1 s |
-| `result3.xlsx` | 固定半径含水率轨迹 | 3431 | 60–205860 s | 60 s |
-| `result4.xlsx` | 收缩条件下含水率轨迹 | 3049 | 60–182940 s | 60 s |
+烘房温度 $T_a(t)$ 和环境水分势 $C_a(t)$ 在附件观测区间 $0\le t\le 14400\ \mathrm{s}$ 内采用分段线性插值；此后保持末端实测值
 
-精确终止事件独立保存在 `results/tables/q2_meta.json` 和 `q4_meta.json` 中，不在 60 s 规则时间序列末尾混入非规则行。网格验证中的 Q3 事件采用与正式 `model2.py` 相同的 1 s 推进和事件括区，并仅将场抽稀到 60 s 保存；因此同为 N=321 时，两者的连续事件时间严格一致。
+$$
+T_a=50.165\ ^\circ\mathrm C,
+\qquad
+C_a=0.04986\ \mathrm{kg\,kg^{-1}}.
+$$
+
+<p align="center">
+  <img src="results/figures/input_environment.png" width="760" alt="烘房温度与环境水分势">
+</p>
+<p align="center"><strong>烘房环境的实测数据、分段线性插值与平台延拓</strong></p>
+
+收缩半径由附件数据经 PCHIP 保形插值得到。计算前将半径从厘米换算为米，并在 $t\ge 241200\ \mathrm{s}$ 时固定为 $0.01198\ \mathrm m$。
 
 ## 数学模型
 
-药材视为均匀、各向同性的圆柱等效介质，只保留径向变化。固定半径工况直接在物理半径上求解；收缩工况采用归一化材料坐标
+药材视为均匀、各向同性的圆柱等效介质，仅考虑径向传热与传质。温度记为 $T(r,t)$，绝对温度为
 
 $$
-\xi=\frac{r}{R(t)},\qquad 0\leq\xi\leq1.
+\Theta=T+273.15\ \mathrm K.
 $$
 
-统一控制方程为
+### 固定半径模型
+
+在 $0<r<R_0$ 上，控制方程为
 
 $$
 \rho(X)c_p(X)\frac{\partial T}{\partial t}
-=\frac{1}{R(t)^2\xi}\frac{\partial}{\partial\xi}
-\left(\xi k(X)\frac{\partial T}{\partial\xi}\right),
+=
+\frac{1}{r}\frac{\partial}{\partial r}
+\left[rk(X)\frac{\partial T}{\partial r}\right],
 $$
 
 $$
 \frac{\partial X}{\partial t}
-=\frac{1}{R(t)^2\xi}\frac{\partial}{\partial\xi}
-\left(\xi D_{\mathrm{eff}}(X,T)\frac{\partial X}{\partial\xi}\right).
+=
+\frac{1}{r}\frac{\partial}{\partial r}
+\left[rD_{\mathrm{eff}}(X,\Theta)\frac{\partial X}{\partial r}\right].
 $$
 
-其中 `T` 为温度，`X` 为干基含水率。温度场使用 °C 保存，扩散系数中的 Arrhenius 温度转换为 K。圆柱中心采用零通量条件，表面采用时变 Robin 换热与传质边界。
+初始条件为
 
-环境数据在观测区间内进行分段线性插值，4 h 后保持末端平台值。收缩半径先由 cm 转换为 m，再进行 PCHIP 保形插值；从 241200 s 起固定为 `0.01198 m`。
+$$
+T(r,0)=28\ ^\circ\mathrm C,
+\qquad
+X(r,0)=2.55\ \mathrm{kg\,kg^{-1}}.
+$$
 
-本模型将水分方程作为以干基含水率为状态变量的经验有效扩散模型。现有输入不足以唯一恢复真实水蒸气质量通量，因此没有额外引入未经标定的相变潜热项。
+圆柱中心满足对称条件
+
+$$
+\left.\frac{\partial T}{\partial r}\right|_{r=0}=0,
+\qquad
+\left.\frac{\partial X}{\partial r}\right|_{r=0}=0.
+$$
+
+表面 Robin 边界为
+
+$$
+k(X_s)\left.\frac{\partial T}{\partial r}\right|_{r=R_0}
+=h_T\,[T_a(t)-T_s(t)],
+$$
+
+$$
+-D_{\mathrm{eff}}(X_s,\Theta_s)
+\left.\frac{\partial X}{\partial r}\right|_{r=R_0}
+=h_m\,[X_s(t)-C_a(t)].
+$$
+
+### 收缩移动域模型
+
+令
+
+$$
+\xi=\frac{r}{R(t)},
+\qquad 0\le \xi\le 1.
+$$
+
+在材料坐标 $\xi$ 上，控制方程写为
+
+$$
+\rho_4(X)c_{p,4}(X)\frac{\partial T}{\partial t}
+=
+\frac{1}{R(t)^2\xi}\frac{\partial}{\partial\xi}
+\left[\xi k_4(X)\frac{\partial T}{\partial\xi}\right],
+$$
+
+$$
+\frac{\partial X}{\partial t}
+=
+\frac{1}{R(t)^2\xi}\frac{\partial}{\partial\xi}
+\left[\xi D_4(X,\Theta)\frac{\partial X}{\partial\xi}\right].
+$$
+
+表面 $\xi=1$ 处满足
+
+$$
+\frac{k_4(X_s)}{R(t)}
+\left.\frac{\partial T}{\partial\xi}\right|_{\xi=1}
+=h_T\,[T_a(t)-T_s(t)],
+$$
+
+$$
+-\frac{D_4(X_s,\Theta_s)}{R(t)}
+\left.\frac{\partial X}{\partial\xi}\right|_{\xi=1}
+=h_m\,[X_s(t)-C_a(t)].
+$$
+
+水分方程是以干基含水率为状态变量的经验有效扩散模型。现有输入不足以唯一确定真实水蒸气质量通量和相变潜热，因此模型不额外引入未经标定的潜热项，也不将有效通量闭合解释为设备层面的完整质量或能量守恒。
 
 ## 数值方法
 
-- 空间离散：cell-centered 有限体积法，内部界面物性采用调和平均。
-- Robin 边界：半单元扩散阻力与表面对流阻力串联，等效传递系数隐式并入最后一个控制体。
-- 时间积分：Backward Euler 启动，随后使用变步长 BDF2。
-- 非线性求解：每个时间层进行 Picard 迭代，低含水率阶段自动收紧步长并按需欠松弛。
-- 线性求解：调用 SciPy/LAPACK `dgtsv` 编译内核求解三对角系统，替代 Python 逐元素 Thomas 扫描。
-- 数据对齐：积分步强制落在环境数据的 60 s 节点上。
-- 事件定位：持续监测 `max(X) - 0.15`，在穿越区间内二分定位连续终止时刻。
-- 输出映射：cell-centered 场映射至指定物理半径；收缩后位于药材外部的位置保存为空值。
+- 空间离散：cell-centered 有限体积法，控制体权重与圆柱环形面积一致。
+- 内部界面：变物性系数采用调和平均。
+- 表面边界：半单元扩散阻力与表面对流阻力串联，等效传递系数隐式并入边界控制体。
+- 时间离散：Backward Euler 启动，随后采用变步长 BDF2。
+- 非线性求解：每个时间层执行 Picard 迭代，并在低含水率阶段收紧步长和按需欠松弛。
+- 线性求解：调用 SciPy/LAPACK `dgtsv` 求解三对角线性系统。
+- 数据对齐：时间步强制落在环境数据的 $60\ \mathrm{s}$ 节点上。
+- 事件定位：监测 $g(t)=\max X(t)-0.15$，在符号改变的时间区间内二分定位连续终止时刻。
+- 输出映射：将控制体中心场映射至题目指定物理半径；收缩后位于药材外部的位置保存为空值。
 
-终止事件二分使用穿越前求解器的完整快照，包括 BDF2 历史与自适应步长状态，避免事件区间重算丢失多步历史。
+## 温度与含水率分布
+
+预热阶段的温度和含水率径向剖面表现出由表面向中心传播的热湿梯度。
+
+<p align="center">
+  <img src="results/figures/q1_profiles.png" width="760" alt="预热阶段温度和含水率径向剖面">
+</p>
+<p align="center"><strong>预热阶段温度与干基含水率径向剖面</strong></p>
+
+<table>
+<tr>
+<td width="50%"><img src="results/figures/q2_temperature_heatmap.png" alt="固定半径前三小时温度场"></td>
+<td width="50%"><img src="results/figures/q2_moisture_heatmap.png" alt="固定半径前三小时含水率场"></td>
+</tr>
+<tr>
+<td align="center"><strong>固定半径工况前三小时温度场</strong></td>
+<td align="center"><strong>固定半径工况前三小时含水率场</strong></td>
+</tr>
+</table>
+
+固定半径完整过程中，表面含水率下降最快，中心含水率决定最终终止事件。
+
+<table>
+<tr>
+<td width="50%"><img src="results/figures/q3_moisture_heatmap.png" alt="固定半径完整含水率场"></td>
+<td width="50%"><img src="results/figures/q3_moisture_summary.png" alt="固定半径中心平均和表面含水率"></td>
+</tr>
+<tr>
+<td align="center"><strong>固定半径完整含水率时空分布</strong></td>
+<td align="center"><strong>中心、截面积加权平均和表面含水率</strong></td>
+</tr>
+</table>
+
+<p align="center">
+  <img src="results/figures/q3_drying_rate.png" width="660" alt="平均干燥速率与平均含水率">
+</p>
+<p align="center"><strong>平均干燥速率随截面积加权平均含水率的变化</strong></p>
+
+收缩工况同时在物理坐标和材料坐标下展示。图中的时空场由正式 $0.1\ \mathrm{cm}$ 物理采样结果重构，用于描述宏观分布，不等同于原始 $321$ 单元求解场。
+
+<table>
+<tr>
+<td width="50%"><img src="results/figures/q4_physical_heatmap.png" alt="收缩工况物理坐标含水率场"></td>
+<td width="50%"><img src="results/figures/q4_material_heatmap.png" alt="收缩工况材料坐标含水率场"></td>
+</tr>
+<tr>
+<td align="center"><strong>物理坐标下的含水率分布与移动边界</strong></td>
+<td align="center"><strong>材料坐标下的含水率分布</strong></td>
+</tr>
+</table>
+
+<p align="center">
+  <img src="results/figures/q4_shrinkage_scale.png" width="700" alt="半径收缩和扩散尺度变化">
+</p>
+<p align="center"><strong>实测半径、收缩比与几何扩散尺度</strong></p>
+
+<table>
+<tr>
+<td width="50%"><img src="results/figures/q3_profiles.png" alt="固定半径工况含水率径向剖面"></td>
+<td width="50%"><img src="results/figures/q4_profiles.png" alt="收缩工况含水率径向剖面"></td>
+</tr>
+<tr>
+<td align="center"><strong>固定半径工况的含水率径向剖面</strong></td>
+<td align="center"><strong>收缩工况的含水率径向剖面</strong></td>
+</tr>
+</table>
 
 ## 数值验证
 
-- 使用圆柱 Robin 边界的 Bessel 特征函数展开验证预热温度场。
-- 使用 Duhamel 叠加验证时变环境温度下的数值解。
-- 对固定半径和收缩工况进行 `N = 81/161/321` 空间网格收敛分析。
-- 可选增加 `N = 641` 的终止事件计算，并显式报告相邻网格的 `Δt_dry`。
-- 对最大时间步 `60/30/15 s` 进行时间收敛分析。
-- 对 Q1 表面含水率进行 `N = 161/321/641`、最大时间步 `1/0.5/0.25 s` 专项收敛分析。
-- 对 4 h 后 `C_a = 0.03/0.05/0.07` 逐时逐网格检查场值排序和中心交叉。
-- 检查半径单位与连续性、物性正性、含水率非负、温度范围及径向剖面趋势。
-- 对换热系数、传质系数和长期环境平台值进行敏感性分析。
-- 将工作簿代表性单元格与独立 CSV 轨迹交叉核对，并检查表 5/6 的精确事件行。
+模型通过解析基准、物理约束、空间与时间收敛、环境水分势排序、积分通量闭合以及正式输出交叉核对进行验证。
 
-空间收敛结果如下。表中场值误差是相邻网格在公共采样点的最大差：
-
-| 工况 | 网格变化 | `Δt_dry` / s | `max |ΔT|` / °C | `max |ΔX|` |
+| 工况 | 网格变化 | $\Delta t_{\mathrm{dry}}$ / s | $\max|\Delta T|$ / °C | $\max|\Delta X|$ |
 |---|---|---:|---:|---:|
-| 固定半径 | 161→321 | −149.56 | 2.329×10⁻⁵ | 2.183×10⁻⁴ |
-| 固定半径 | 321→641 | −52.59 | 5.866×10⁻⁶ | 8.154×10⁻⁵ |
-| 实测收缩 | 161→321 | −25.87 | 6.617×10⁻⁵ | 1.780×10⁻⁴ |
-| 实测收缩 | 321→641 | −7.54 | 1.664×10⁻⁵ | 4.471×10⁻⁵ |
+| 固定半径 | $161\rightarrow321$ | $-149.56$ | $2.329\times10^{-5}$ | $2.183\times10^{-4}$ |
+| 固定半径 | $321\rightarrow641$ | $-52.59$ | $5.866\times10^{-6}$ | $8.154\times10^{-5}$ |
+| 实测收缩 | $161\rightarrow321$ | $-25.87$ | $6.617\times10^{-5}$ | $1.780\times10^{-4}$ |
+| 实测收缩 | $321\rightarrow641$ | $-7.54$ | $1.664\times10^{-5}$ | $4.471\times10^{-5}$ |
 
-最大时间步从 60 s 缩小到 15 s 时，N=81 的终止时间变化分别为 0.26 s 和 0.12 s。事件二分定位误差远小于空间离散误差，因此程序保存完整连续事件值，但结果解释不宣称具有 0.01 s 的物理精度。
+<p align="center">
+  <img src="results/figures/convergence.png" width="760" alt="空间与时间收敛">
+</p>
+<p align="center"><strong>终止时间的空间网格与时间步收敛</strong></p>
 
-P0 环境水分势检查表明：N=81 会因强非线性干燥表层产生中心场交叉；N≥161 后中心交叉消失，N=321 时 `C_a=0.03/0.05/0.07` 的终止时间依次为 205351.50、205893.97、208106.06 s，恢复“环境越湿、干燥越慢”的方向。固定扩散系数控制组在全部网格和时刻均无排序违例，排除了 Robin 符号错误。
+最大时间步从 $60\ \mathrm{s}$ 减小到 $15\ \mathrm{s}$ 时，固定半径和实测收缩工况的终止时间分别变化 $0.26\ \mathrm{s}$ 和 $0.12\ \mathrm{s}$。事件定位误差远小于空间离散误差，因此连续事件值用于保证输出一致性，不表示模型具有相同小数位数的物理精度。
 
-Q1 的 `t=1 s` 表面含水率在 N=641/1281/2561 时依次为 2.5173440、2.5176351、2.5177076；N=2561 下最大步长从 0.03125 s 减至 0.015625 s 仅变化 4.45×10⁻⁶，据此确定 Q1 生产离散。
-
-## 敏感性与几何效应
-
-敏感性分析采用 N=321。`h_T` 变化 ±20% 仅改变终止时间几十秒；`h_m` 减半会延长约 7.45 h；4 h 后平台温度降低 2 °C 会延长约 3.80 h。平台水分势降低/提高 10% 分别使终止时间变化 −266/+359 s，方向与传质驱动力一致。
-
-在同一套收缩工况物性下，固定半径反事实的终止时间为 464785.24 s（129.11 h），实测收缩模型为 182964.66 s（50.82 h），几何收缩缩短约 78.28 h。两者时间比约 0.394，与最终半径平方比约 0.359 同量级，支持扩散时间尺度随特征长度平方变化的解释。
-
-## 干燥效率—终点含水率均匀性分析
-
-冻结后的分析层使用圆柱截面积加权平均含水率、面积加权径向标准差和含水率极差。FVM 事件场直接使用控制体面积权重，避免等间距径向点的普通标准差过度赋权中心区域。平均干燥速率由 Robin 表面通量计算：
+平均含水率与边界有效通量满足积分关系
 
 $$
--\frac{\mathrm d\bar X}{\mathrm dt}=\frac{2h_m}{R(t)}[X_s-C_a].
+\bar X(t)-\bar X(0)
++
+\int_0^t \frac{2h_m}{R(\tau)}
+\left[X_s(\tau)-C_a(\tau)\right],\mathrm d\tau
+=0.
 $$
 
-通量验证不再对环境数据节点做点态数值微分，而是在每个 30 s 区间检查
+在 $N=81$、$0$–$12\ \mathrm{h}$ 的全时域检查中，固定半径和收缩工况相对总含水率变化的最大累计闭合误差分别为 $1.191\times10^{-5}$ 和 $1.298\times10^{-5}$；前 $4\ \mathrm{h}$ 的全部 $480$ 个积分区间均纳入检查。
+
+## 敏感性与工艺情景
+
+敏感性分析采用 $N=321$。换热系数 $h_T$ 改变 $\pm20\%$ 时，终止时间仅改变数十秒；传质系数 $h_m$ 减半使终止时间延长约 $7.45\ \mathrm{h}$；恒温阶段温度降低 $2\ ^\circ\mathrm C$ 使终止时间延长约 $3.80\ \mathrm{h}$。
+
+<p align="center">
+  <img src="results/figures/sensitivity.png" width="700" alt="参数敏感性分析">
+</p>
+<p align="center"><strong>参数与环境情景对终止时间的影响</strong></p>
+
+平台温度情景保持前 $4\ \mathrm{h}$ 实测过程不变，仅改变此后的恒温阶段设定值。在 $48$–$52\ ^\circ\mathrm C$ 范围内，平台温度由 $50.165\ ^\circ\mathrm C$ 提高到 $52\ ^\circ\mathrm C$，终止时间由 $57.1904\ \mathrm{h}$ 缩短至 $53.9942\ \mathrm{h}$，缩短 $3.1962\ \mathrm{h}$，相对降幅为 $5.59\%$。
+
+终点截面积加权标准差定义为
 
 $$
-\bar X(t_{n+1})-\bar X(t_n)
-+\int_{t_n}^{t_{n+1}}\frac{2h_m}{R(t)}[X_s(t)-C_a(t)]\,\mathrm dt=0.
+\sigma_X(t_f)
+=
+\left[
+\frac{2}{R^2}
+\int_0^R \left(X-\bar X\right)^2r\,\mathrm dr
+\right]^{1/2}.
 $$
 
-N=81 的 Q2/Q4 在 0–12 h 全时域累计闭合中，相对 12 h 含水率损失的最大误差分别为 `1.191×10⁻⁵` 和 `1.298×10⁻⁵`。前 4 h 共 480 个区间全部参与验证，没有因 60 s 环境节点而排除数据。这证明当前经验含水率方程的离散积分与边界通量一致，不代表设备层面的真实水质量或能量闭合。
+从实测平台到 $52\ ^\circ\mathrm C$，$N=321$ 和 $N=641$ 均给出 $\sigma_X$ 轻微下降，但代表温度下的最大网格差为 $1.106\times10^{-5}$，是 $N=321$ 温度信号的 $4.51$ 倍。因此该均匀性变化在当前空间分辨率下不可辨识。可靠结论是：升高平台温度显著缩短终止时间，未观察到含水率均匀性恶化，终点均匀性基本不变。
 
-品质扫描保持附件 1 的前 4 h 实测过程不变，仅在 `t > 14400 s` 后将环境温度直接切换到给定平台值，同时最小化终止时间和终点面积加权标准差。它不是“不同平台温度下的完整预热过程”。程序不预设两者必然冲突，而是从数值结果提取非支配集合，并报告最快、最均匀及归一化目标空间中的折中方案。可通过 `--hm-factors` 增加边界传质能力二维情景；由于缺少风速标定和设备功率数据，这些目标称为干燥效率与含水率均匀性，不称为风速方案或能耗最优。
+<p align="center">
+  <img src="results/figures/pareto_time_uniformity.png" width="680" alt="终止时间与终点含水率均匀性">
+</p>
+<p align="center"><strong>终止时间—终点含水率均匀性目标空间</strong></p>
 
-N=321 的正式单参数扫描共包含 18 个情景。平台温度从 48 °C 升至 52 °C 时，终止时间由 61.3147 h 单调降至 53.9942 h，终点面积加权标准差从 0.0194299 变为 0.0194249。相对实测平台 50.165 °C，52 °C 将终止时间缩短 3.1962 h（5.59%），而标准差仅改变 2.450×10⁻⁶（0.0126%）。N=641 下标准差也沿相同方向改变 2.998×10⁻⁶，但三个代表温度的最大 `|σ₆₄₁−σ₃₂₁|` 为 1.106×10⁻⁵，是 N=321 温度信号的 4.51 倍。因而这项微小变化在当前空间分辨率下不可辨识，正式结论是：升高平台温度显著缩短干燥时间，同时没有观察到含水率均匀性恶化，均匀性本身基本不变。
+考察区间内两项目标未表现出可辨识的竞争关系，非支配集合退化为 $52\ ^\circ\mathrm C$ 单点。该温度仅表示给定 $48$–$52\ ^\circ\mathrm C$ 区间内的最优情景。模型未包含有效成分热降解、色泽变化、挥发性成分损失、组织损伤和设备能耗，不能据此外推物理上的全局最优温度。温度情景限定于固定几何模型，因为现有实测收缩曲线不足以确定不同温度下的 $R(t;T_{\mathrm{plat}})$。
 
-在考察区间内，两项目标没有表现出竞争关系，目标空间中的非支配集合退化为单点 52 °C。这里的 52 °C 只是 `48–52 °C` 允许区间内的最优情景，不是物理上的全局最优温度。模型没有描述有效成分热降解、色泽、挥发性成分、组织损伤和能耗成本，因而不通过扩大温区人为寻找内部最优。温度情景只在固定几何 Q2/Q3 模型上比较；附件 2 的收缩曲线来自原始工况，缺少 `R(t;T_platform)` 关系，不能在不同温度下机械复用同一条实测收缩轨迹。
+## 正式输出
 
-统一可视化入口只读取冻结结果和派生分析文件，不重新求解 PDE。输出包括环境输入、Q1–Q4 时空热图、Q4 物理域/材料域双图、关键径向剖面、干燥速率、收敛性、敏感性及双目标情景图。图例、注释和坐标说明优先使用中文，图内不设置题号式标题；多面板仅保留 `(a)/(b)` 面板标签。曲线采用色盲友好配色并用线型或标记提供冗余编码，热图不叠加会干扰数据的坐标网格。热图同时生成高分辨率 PNG 和带栅格化色块的 PDF，其坐标、文字与叠加曲线仍保持矢量。Q1/Q4 热图由冻结的 0.1 cm 物理采样重构，不能称为 321 单元原始高分辨率场；Q1 最初薄边界层的证据来自 P0 专项收敛，而不是热图。生成的 27 个文件是正文与附录的选材库，正文宜按环境、Q1、Q2、Q3 场、Q3 机理、Q4 场、收缩尺度、验证与决策约 8 个图组取舍。
+| 文件 | 内容 | 数据行 | 时间范围 | 时间间隔 |
+|---|---|---:|---:|---:|
+| `data/附件3/result1.xlsx` | 预热阶段温度与含水率 | 1800 | $1$–$1800\ \mathrm{s}$ | $1\ \mathrm{s}$ |
+| `data/附件3/result2.xlsx` | 固定半径完整温度与含水率 | 205885 | $1$–$205885\ \mathrm{s}$ | $1\ \mathrm{s}$ |
+| `data/附件3/result3.xlsx` | 固定半径含水率 | 3431 | $60$–$205860\ \mathrm{s}$ | $60\ \mathrm{s}$ |
+| `data/附件3/result4.xlsx` | 收缩工况含水率 | 3049 | $60$–$182940\ \mathrm{s}$ | $60\ \mathrm{s}$ |
 
-`check_analysis.py` 会重算支配关系、事件约束、积分闭合覆盖范围和品质指标网格差，检查每个方案的均值、标准差、极差及 101 点终点剖面，并通过 SHA-256 核对分析数据和全部 27 个图件的实际内容。
-
-## 项目结构
-
-```text
-.
-├── data/
-│   ├── 附件1.xlsx              # 烘房温度与外部水分势
-│   ├── 附件2.xlsx              # 实测半径时间序列
-│   └── 附件3/result1~4.xlsx    # 完整正式结果
-├── results/
-│   ├── figures/                # 可再生结果图
-│   └── tables/                 # CSV 轨迹、事件元数据和敏感性结果
-├── src/
-│   ├── props.py                # 物性、环境与半径输入
-│   ├── solver.py               # 统一 FVM/BDF2/Picard 求解器
-│   ├── model1.py               # 预热阶段
-│   ├── model2.py               # 固定半径完整烘干过程
-│   ├── model3.py               # 固定半径终止结果
-│   ├── model4.py               # 实测收缩移动域模型
-│   ├── sensitivity.py          # 参数敏感性和反事实计算
-│   ├── metrics.py              # 圆柱面积加权品质指标
-│   ├── quality_optimization.py # 平台温度与传质能力 Pareto 情景
-│   ├── validate_metrics.py     # 全时域积分通量与品质网格收敛
-│   ├── check_analysis.py       # 派生指标/非支配集/图件内容审计
-│   ├── visualize.py            # 只读冻结结果的统一绘图入口
-│   ├── validate.py             # 数值与物理验证
-│   ├── generate_tables.py      # 从正式结果提取题面表 1–6
-│   ├── check_outputs.py        # 正式 Excel 完整性审计
-│   ├── xlsx_io.py              # Excel 原子写入与格式化
-│   └── utils.py                # 缓存指纹、路径和绘图工具
-└── requirements.txt
-```
+精确终止事件及对应场保存在 `results/tables/q2_meta.json` 和 `results/tables/q4_meta.json`。`result3.xlsx` 与 `result4.xlsx` 仅保存严格早于连续终止事件的规则 $60\ \mathrm{s}$ 时间点。题目表 1–6 由 `src/generate_tables.py` 自动生成至 `results/tables/paper_table1.csv` 至 `paper_table6.csv`，其中表 5、表 6 的最后一行来自连续事件场。
 
 ## 环境配置
 
-推荐使用 Python 3.11 和 Conda：
+推荐使用 Python 3.11 和 Conda 环境：
 
 ```bash
 conda create -n cumcm-a python=3.11 -y
@@ -173,7 +294,7 @@ pip install -r requirements.txt
 export PYTHONPATH=src
 ```
 
-也可以在未激活环境时使用：
+未激活环境时可使用：
 
 ```bash
 export PYTHONPATH=src
@@ -182,7 +303,7 @@ conda run -n cumcm-a python src/model1.py
 
 ## 运行方法
 
-依次生成四个正式结果：
+生成四个正式结果：
 
 ```bash
 python src/model1.py
@@ -191,20 +312,14 @@ python src/model3.py
 python src/model4.py
 ```
 
-`model2.py` 会生成约 27 MB 的完整 1 s 间隔工作簿，计算与写入时间明显长于其他任务。长计算采用内容指纹缓存和同目录临时文件原子替换；代码、输入数据、网格或输出设置变化后，旧缓存会自动失效。
-
-时间推进具有严格的前后依赖，每一步只需求解两个小型三对角系统，因此 GPU 并不适合该工作负载，单次正式求解通常表现为一个 CPU 核心繁忙。编译 LAPACK 内核相对原 Python Thomas 循环的微基准约快 38 倍。本机实测 Q1、Q2、Q4 分别耗时约 15、149、4 s；Q2 还包含约 20.6 万个逐秒输出步和两张大型 Excel 的写入。
-
-生成题面要求的表 1–6，并运行输出审计：
+生成题目表 1–6 并审计正式工作簿：
 
 ```bash
 python src/generate_tables.py
 python src/check_outputs.py
 ```
 
-生成器将四位小数 CSV 写入 `results/tables/paper_table1.csv` 至 `paper_table6.csv`。表 5 和表 6 的最后一行由事件元数据中的连续事件场生成，不用最后一个 60 s 规则采样行替代。
-
-运行冻结后的品质分析与可视化：
+运行冻结后的指标验证、平台温度情景和可视化：
 
 ```bash
 python src/quality_optimization.py
@@ -213,55 +328,48 @@ python src/visualize.py
 python src/check_analysis.py
 ```
 
-`--quality-grid` 只新增 48、50.165、52 °C 三个 N=641 情景，并复用正式 N=321 扫描；三个情景可分别占用一个 CPU 进程。程序同时重做耗时很短的 0–12 h 积分通量闭合。
-
-默认品质扫描为 `T_platform = 48–52 °C`、步长 `0.25 °C`，并额外纳入附件实测平台值作为基准。可选二维情景示例：
-
-```bash
-python src/quality_optimization.py --hm-factors 0.75,0.875,1,1.125,1.25 --force
-```
-
-运行完整验证：
+运行完整数值验证：
 
 ```bash
 python src/validate.py
 ```
 
-运行冻结前 P0 专项验证：
-
-```bash
-python src/validate.py --p0-only
-```
-
-终止事件空间收敛追加 `N = 641`：
+需要分别执行收敛与解析基准验证时，可使用：
 
 ```bash
 python src/validate.py --grid-only --include-641
-```
-
-只重算时间步收敛：
-
-```bash
 python src/validate.py --time-only
-```
-
-如只需执行解析基准和物理检查，可跳过耗时较长的空间或时间收敛部分：
-
-```bash
 python src/validate.py --skip-grid --skip-time
 ```
 
-## 输出约定
+## 项目结构
 
-- `result1/2` 从 1 s 开始，不保存 `t = 0` 行，半径列为 0–2.0 cm，间隔 0.1 cm。
-- `result3` 从 60 s 开始，保存严格 60 s 间隔行，半径列为 0–2.0 cm。
-- `result4` 从 60 s 开始，固定半径列为 0–1.9 cm，末列为每个时刻的药材表面。
-- `result3/4` 只保存严格早于连续终止事件的规则行。
-- 所有 Excel 数值统一显示四位小数。
-- 正式文件写入采用临时文件与原子替换，计算中断不会留下被误认作完整结果的工作簿。
+```text
+.
+├── data/
+│   ├── 附件1.xlsx
+│   ├── 附件2.xlsx
+│   └── 附件3/result1~4.xlsx
+├── results/
+│   ├── figures/
+│   └── tables/
+├── src/
+│   ├── props.py
+│   ├── solver.py
+│   ├── model1.py
+│   ├── model2.py
+│   ├── model3.py
+│   ├── model4.py
+│   ├── metrics.py
+│   ├── sensitivity.py
+│   ├── quality_optimization.py
+│   ├── validate.py
+│   ├── validate_metrics.py
+│   ├── generate_tables.py
+│   ├── check_outputs.py
+│   ├── check_analysis.py
+│   └── visualize.py
+└── requirements.txt
+```
 
-## 复现说明
-
-完整结果随仓库提供，可直接运行 `src/check_outputs.py` 验证。内容指纹使用仓库内相对路径与文件内容生成，因此项目移动或克隆到其他目录后，只要代码、输入和设置不变，仍可安全复用已有长计算结果。
-
-事件二分容差控制的是搜索误差，不代表 PDE 或物理模型具有同等精度。最终报告精度应由空间、时间离散误差和参数不确定性决定。
+所有长计算结果均带有输入内容指纹。代码、输入数据、网格或关键设置发生变化时，旧缓存自动失效；正式文件采用临时文件与原子替换，避免中断写入被误认为完整结果。

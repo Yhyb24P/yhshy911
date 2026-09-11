@@ -168,7 +168,7 @@ def run():
     ax2.set_ylabel("环境水分势 $C_a$ / kg·kg$^{-1}$")
     lines = ax1.lines + ax2.lines
     ax1.legend(lines, [line.get_label() for line in lines], ncol=2, loc="lower right")
-    made += _save(fig, "input_environment")
+    made += _save(fig, "input_environment", png=True)
 
     # F2/F3：Q1 冻结轨迹。
     q1 = pd.read_csv(TABLES / "q1_samples.csv")
@@ -196,7 +196,7 @@ def run():
     for label, ax in zip(("(a)", "(b)"), axes):
         ax.text(0.02, 0.98, label, transform=ax.transAxes, va="top", fontweight="bold")
         ax.legend()
-    made += _save(fig, "q1_profiles")
+    made += _save(fig, "q1_profiles", png=True)
 
     # F4：Q2 前三小时。
     t2, r2, T2 = _xlsx_series(DATA / "附件3" / "result2.xlsx", "温度", 10800)
@@ -224,7 +224,7 @@ def run():
     ax.invert_xaxis()
     ax.set_xlabel(r"截面积加权平均含水率 $\bar X$ / kg·kg$^{-1}$")
     ax.set_ylabel("平均干燥速率 / h$^{-1}$")
-    made += _save(fig, "q3_drying_rate")
+    made += _save(fig, "q3_drying_rate", png=True)
     setup_plot()
     fig, ax = plt.subplots()
     ax.plot(t3, X3[:, 0], color=COLORS[0], ls="-", label="中心")
@@ -233,7 +233,7 @@ def run():
     ax.set_xlabel("时间 / h")
     ax.set_ylabel("干基含水率 $X$ / kg·kg$^{-1}$")
     ax.legend()
-    made += _save(fig, "q3_moisture_summary")
+    made += _save(fig, "q3_moisture_summary", png=True)
 
     with open(TABLES / "q2_meta.json", encoding="utf-8") as f:
         q2_meta = json.load(f)
@@ -252,7 +252,7 @@ def run():
     ax.set_xlabel("半径 / cm")
     ax.set_ylabel("干基含水率 $X$ / kg·kg$^{-1}$")
     ax.legend(fontsize=8)
-    made += _save(fig, "q3_profiles")
+    made += _save(fig, "q3_profiles", png=True)
 
     # F7/F8：Q4 物理域与材料域双图。
     q4 = pd.read_csv(TABLES / "q4_samples.csv")
@@ -281,7 +281,7 @@ def run():
     ax.set_xlabel("物理半径 / cm")
     ax.set_ylabel("干基含水率 $X$ / kg·kg$^{-1}$")
     ax.legend(fontsize=8)
-    made += _save(fig, "q4_profiles")
+    made += _save(fig, "q4_profiles", png=True)
 
     # F9：收缩尺度与几何扩散倍率。
     radius_model = Radius(DATA / "附件2.xlsx")
@@ -303,7 +303,7 @@ def run():
     ax2.set_ylabel("无量纲收缩量 / 扩散尺度")
     lines = ax1.lines + ax2.lines
     ax1.legend(lines, [line.get_label() for line in lines], fontsize=8)
-    made += _save(fig, "q4_shrinkage_scale")
+    made += _save(fig, "q4_shrinkage_scale", png=True)
 
     # F10：空间与时间收敛。
     with open(TABLES / "grid_convergence.json", encoding="utf-8") as f:
@@ -325,7 +325,7 @@ def run():
     for label, ax in zip(("(a)", "(b)"), axes):
         ax.text(0.02, 0.98, label, transform=ax.transAxes, va="top", fontweight="bold")
         ax.legend()
-    made += _save(fig, "convergence")
+    made += _save(fig, "convergence", png=True)
 
     # F11：已有 OAT/平台情景的终止时间变化。
     with open(TABLES / "q_sens.json", encoding="utf-8") as f:
@@ -350,7 +350,7 @@ def run():
     ax.barh(labels, changes, color=["tab:blue" if x < 0 else "tab:orange" for x in changes])
     ax.axvline(0, color="black", lw=0.8)
     ax.set_xlabel("终止时间变化 / h")
-    made += _save(fig, "sensitivity")
+    made += _save(fig, "sensitivity", png=True)
 
     # F12/F13：双目标情景与代表方案终点剖面。
     quality = pd.read_csv(TABLES / "quality_pareto.csv")
