@@ -49,15 +49,13 @@ $$
 在 $0<r<R_0$ 上，控制方程为
 
 $$
-\rho(X)c_p(X)\frac{\partial T}{\partial t}
-=
+\rho(X)c_p(X)\frac{\partial T}{\partial t}=
 \frac{1}{r}\frac{\partial}{\partial r}
 \left[rk(X)\frac{\partial T}{\partial r}\right],
 $$
 
 $$
-\frac{\partial X}{\partial t}
-=
+\frac{\partial X}{\partial t}=
 \frac{1}{r}\frac{\partial}{\partial r}
 \left[rD_{\mathrm{eff}}(X,\Theta)\frac{\partial X}{\partial r}\right].
 $$
@@ -103,15 +101,13 @@ $$
 在材料坐标 $\xi$ 上，控制方程写为
 
 $$
-\rho_4(X)c_{p,4}(X)\frac{\partial T}{\partial t}
-=
+\rho_4(X)c_{p,4}(X)\frac{\partial T}{\partial t}=
 \frac{1}{R(t)^2\xi}\frac{\partial}{\partial\xi}
 \left[\xi k_4(X)\frac{\partial T}{\partial\xi}\right],
 $$
 
 $$
-\frac{\partial X}{\partial t}
-=
+\frac{\partial X}{\partial t}=
 \frac{1}{R(t)^2\xi}\frac{\partial}{\partial\xi}
 \left[\xi D_4(X,\Theta)\frac{\partial X}{\partial\xi}\right].
 $$
@@ -255,8 +251,7 @@ $$
 终点截面积加权标准差定义为
 
 $$
-\sigma_X(t_f)
-=
+\sigma_X(t_f)=
 \left[
 \frac{2}{R^2}
 \int_0^R \left(X-\bar X\right)^2r\,\mathrm dr
