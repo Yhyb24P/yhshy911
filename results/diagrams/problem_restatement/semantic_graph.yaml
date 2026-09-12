@@ -1,0 +1,51 @@
+graph:
+  id: problem-restatement-relation
+  title: Problem inputs, states and reporting targets
+nodes:
+  - id: air
+    label: Air history and material inputs
+    type: input
+    semantic: true
+    evidence:
+      - source: problem/model.md
+        locator: L11-L18; L97-L103
+  - id: state
+    label: States T(r,t), X(r,t)
+    type: state
+    semantic: true
+    evidence:
+      - source: problem/model.md
+        locator: L71-L75; L89-L90
+  - id: fixed_output
+    label: Q1-Q3 fixed-domain fields and event
+    type: output
+    semantic: true
+    evidence:
+      - source: problem/model.md
+        locator: L490-L515
+  - id: moving_output
+    label: Q4 measured-shrinkage fields and event
+    type: output
+    semantic: true
+    evidence:
+      - source: problem/model.md
+        locator: L535-L540
+edges:
+  - source: air
+    target: state
+    relation: boundary forcing
+    evidence:
+      - source: problem/model.md
+        locator: L97-L103; L116-L116
+  - source: state
+    target: fixed_output
+    relation: sampled fields and dry-time event
+    evidence:
+      - source: problem/model.md
+        locator: L490-L515
+  - source: state
+    target: moving_output
+    relation: fields and dry-time event
+    evidence:
+      - source: problem/model.md
+        locator: L535-L540

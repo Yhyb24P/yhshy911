@@ -1,5 +1,4 @@
-# 不公开的建模资料与论文工作区
-/paper/
+# 不公开的建模资料（论文工作区 /paper/ 已随主项目一并发布）
 /problem/
 /AGENTS.md
 /tmp/
@@ -18,6 +17,5 @@ __pycache__/
 *.tmp
 .*.tmp
 
-# 本地长任务控制台记录；结构化结果保存在 results/tables/*.json
-/results/*.log
+# 控制台日志随主项目发布，供论文数字复核；结构化结果保存在 results/tables/*.json
 /results/figures/preflight.json

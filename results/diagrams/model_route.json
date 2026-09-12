@@ -1,0 +1,42 @@
+{
+  "schema_version": 1,
+  "mode": "architecture",
+  "template_type": "architecture",
+  "style": 1,
+  "quality_profile": "standard",
+  "text_policy": "strict",
+  "width": 1400,
+  "height": 720,
+  "title": "Four-Stage Drying Model Route",
+  "subtitle": "Local data drive Q1--Q4; verification reads frozen production outputs",
+  "containers": [],
+  "nodes": [
+    {"id":"input","kind":"rect","x":35,"y":105,"width":250,"height":120,"label":"Local inputs and boundaries","sublabel":"Annex 1 air; Annex 2 R(t); Apps. 2--4","fill":"#EAF3FB","stroke":"#0072B2","flat":true},
+    {"id":"fixed","kind":"rect","x":375,"y":105,"width":270,"height":130,"label":"Q1--Q3 fixed-radius chain","sublabel":"Q1 constant; Q2 Picard; Q3 bisection","fill":"#E5F5F0","stroke":"#009E73","flat":true},
+    {"id":"shrink","kind":"rect","x":375,"y":470,"width":270,"height":130,"label":"Q4 measured-shrinkage chain","sublabel":"PCHIP R(t); xi coordinate; Appendix 4","fill":"#E5F5F0","stroke":"#009E73","flat":true},
+    {"id":"solver","kind":"double_rect","x":710,"y":470,"width":250,"height":120,"label":"Finite-volume time march","sublabel":"FVM; BE; BDF2; Picard; dgtsv","fill":"#F1EAFE","stroke":"#7C3AED"},
+    {"id":"output","kind":"rect","x":1020,"y":105,"width":270,"height":130,"label":"Formal fields and events","sublabel":"Q1/Q2 fields; Q3/Q4 t_dry; XLSX, CSV","fill":"#FFF4D6","stroke":"#E69F00","flat":true},
+    {"id":"analysis","kind":"rect","x":1020,"y":470,"width":270,"height":130,"label":"Read-only validation","sublabel":"reference; convergence; audit; scenarios","fill":"#FDEDE7","stroke":"#D55E00","flat":true}
+  ],
+  "arrows": [
+    {"id":"a1","source":"input","target":"fixed","source_port":"right","target_port":"left","flow":"read"},
+    {"id":"a2","source":"input","target":"shrink","source_port":"right","target_port":"left","flow":"read"},
+    {"id":"a3","source":"fixed","target":"solver","source_port":"right","target_port":"left","flow":"control"},
+    {"id":"a4","source":"shrink","target":"solver","source_port":"right","target_port":"left","flow":"control"},
+    {"id":"a5","source":"solver","target":"output","source_port":"right","target_port":"left","flow":"write","label":"fields + event root"},
+    {"id":"a6","source":"output","target":"analysis","source_port":"bottom","target_port":"top","flow":"feedback","label":"read-only evidence","dashed":true}
+  ],
+  "legend_orientation":"horizontal",
+  "legend_x":180,
+  "legend_y":640,
+  "legend_locked":true,
+  "legend":[
+    {"flow":"read","label":"inputs"},
+    {"flow":"control","label":"model and solver"},
+    {"flow":"write","label":"states and outputs"},
+    {"flow":"feedback","label":"checks and analysis"}
+  ],
+  "footer":"Solid arrows: input / computation / output.  Dashed arrow: read-only verification evidence.",
+  "footer_x":35,
+  "footer_y":700
+}

@@ -1,0 +1,19 @@
+  [01/18] T_plat=48.000 °C  h_m×1  t_f= 61.315 h  sigma=0.019430
+  [02/18] T_plat=48.250 °C  h_m×1  t_f= 60.818 h  sigma=0.019430
+  [03/18] T_plat=48.500 °C  h_m×1  t_f= 60.326 h  sigma=0.019429
+  [04/18] T_plat=48.750 °C  h_m×1  t_f= 59.840 h  sigma=0.019429
+  [05/18] T_plat=49.000 °C  h_m×1  t_f= 59.360 h  sigma=0.019429
+  [06/18] T_plat=49.250 °C  h_m×1  t_f= 58.885 h  sigma=0.019428
+  [07/18] T_plat=49.500 °C  h_m×1  t_f= 58.415 h  sigma=0.019428
+  [08/18] T_plat=49.750 °C  h_m×1  t_f= 57.950 h  sigma=0.019428
+  [09/18] T_plat=50.000 °C  h_m×1  t_f= 57.491 h  sigma=0.019428
+  [10/18] T_plat=50.165 °C  h_m×1  t_f= 57.190 h  sigma=0.019427
+  [11/18] T_plat=50.250 °C  h_m×1  t_f= 57.037 h  sigma=0.019427
+  [12/18] T_plat=50.500 °C  h_m×1  t_f= 56.587 h  sigma=0.019427
+  [13/18] T_plat=50.750 °C  h_m×1  t_f= 56.143 h  sigma=0.019427
+  [14/18] T_plat=51.000 °C  h_m×1  t_f= 55.704 h  sigma=0.019426
+  [15/18] T_plat=51.250 °C  h_m×1  t_f= 55.269 h  sigma=0.019426
+  [16/18] T_plat=51.500 °C  h_m×1  t_f= 54.839 h  sigma=0.019426
+  [17/18] T_plat=51.750 °C  h_m×1  t_f= 54.414 h  sigma=0.019425
+  [18/18] T_plat=52.000 °C  h_m×1  t_f= 53.994 h  sigma=0.019425
+[quality] 写入 /home/yhshy/git_files/CUMCM2026-A/results/tables/quality_pareto.csv 与 /home/yhshy/git_files/CUMCM2026-A/results/tables/quality_profiles.csv，耗时 294.9 s

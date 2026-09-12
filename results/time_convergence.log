@@ -1,0 +1,12 @@
+== §14.2 时间步收敛 ==
+  Q3 Δt_max=  60 s: t_dry=   206418.07 s
+  Q3 Δt_max=  30 s: t_dry=   206418.28 s
+       与上一时间步公共场值差：max|ΔT|=2.423e-03 °C, max|ΔX|=1.190e-04
+  Q3 Δt_max=  15 s: t_dry=   206418.33 s
+       与上一时间步公共场值差：max|ΔT|=6.410e-04 °C, max|ΔX|=3.159e-05
+  Q4 Δt_max=  60 s: t_dry=   183068.32 s
+  Q4 Δt_max=  30 s: t_dry=   183068.41 s
+       与上一时间步公共场值差：max|ΔT|=2.315e-03 °C, max|ΔX|=1.689e-04
+  Q4 Δt_max=  15 s: t_dry=   183068.44 s
+       与上一时间步公共场值差：max|ΔT|=8.258e-04 °C, max|ΔX|=4.499e-05
+[time] 写入 /home/yhshy/git_files/CUMCM2026-A/results/tables/time_convergence.json

@@ -1,0 +1,108 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1400 720" width="1400" height="720" data-generator="fireworks-tech-graph" data-schema-version="1" data-text-metrics="heuristic-v1" data-style-id="1" data-visual-theme="Flat Icon" data-diagram-type="architecture" data-motion-scene="" data-semantic-profile="generic" data-semantic-valid="true" data-quality-profile="standard" data-max-bends-per-edge="12" data-max-total-bends="100" data-max-route-stretch="5.0" data-max-bridged-crossings="8" data-min-node-gap="0.0" data-min-container-gutter="0.0" data-min-label-clearance="2.0" data-min-segment-length="0.0">
+  <defs>
+    <marker id="arrowA" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#7c3aed"/>
+    </marker>
+    <marker id="arrowB" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#10b981"/>
+    </marker>
+    <marker id="arrowC" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#2563eb"/>
+    </marker>
+    <marker id="arrowE" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#f97316"/>
+    </marker>
+    <marker id="arrowF" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#7c3aed"/>
+    </marker>
+    <marker id="arrowG" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#ef4444"/>
+    </marker>
+    <marker id="arrowH" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#6b7280"/>
+    </marker>
+    <filter id="shadowSoft" x="-20%" y="-20%" width="140%" height="160%">
+      <feDropShadow dx="0" dy="3" stdDeviation="6" flood-color="#0f172a" flood-opacity="0.12"/>
+    </filter>
+    <filter id="shadowGlass" x="-20%" y="-20%" width="140%" height="160%">
+      <feDropShadow dx="0" dy="10" stdDeviation="16" flood-color="#020617" flood-opacity="0.28"/>
+    </filter>
+    <style>
+    text { font-family: 'Helvetica Neue', Helvetica, Arial, 'PingFang SC', 'Noto Sans CJK SC', 'Microsoft YaHei', 'Microsoft JhengHei', 'SimHei', sans-serif; }
+    .title { font-size: 30px; font-weight: 700; fill: #111827; }
+    .subtitle { font-size: 14px; font-weight: 500; fill: #6b7280; }
+    .section { font-size: 13px; font-weight: 700; fill: #2563eb; letter-spacing: 1.4px; }
+    .section-sub { font-size: 12px; font-weight: 500; fill: #64748b; }
+    .node-title { font-weight: 700; fill: #111827; }
+    .node-sub { font-weight: 500; fill: #6b7280; }
+    .node-type { font-size: 12px; font-weight: 700; fill: #64748b; letter-spacing: 0.08em; }
+    .arrow-label { font-size: 12px; font-weight: 600; fill: #6b7280; }
+    .legend { font-size: 12px; font-weight: 500; fill: #6b7280; }
+    .footnote { font-size: 12px; font-weight: 500; fill: #64748b; }
+    .metric-label { font-size: 8.5px; font-weight: 700; fill: #64748b; text-transform: uppercase; }
+    .metric-value { font-size: 9.5px; font-weight: 700; fill: #111827; }
+    </style>
+  </defs>
+  <rect data-graph-role="background" width="1400.0" height="720.0" fill="#ffffff"/>
+  <text x="700.0" y="56" text-anchor="middle" class="title">Four-Stage Drying Model Route</text>
+  <text x="700.0" y="82" text-anchor="middle" class="subtitle">Local data drive Q1--Q4; verification reads frozen production outputs</text>
+  <path id="a1" data-graph-role="edge" data-edge-id="a1" data-source="input" data-target="fixed" data-edge-kind="flow" data-topic-id="" data-flow="read" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="2" data-route-stretch="1.0" data-bridges="" d="M 285,156 L 305.4,156 L 305.4,170 L 375,170" fill="none" stroke="#2563eb" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowC)"/>
+  <path id="a2" data-graph-role="edge" data-edge-id="a2" data-source="input" data-target="shrink" data-edge-kind="flow" data-topic-id="" data-flow="read" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="2" data-route-stretch="1.0" data-bridges="" d="M 285,174 L 305.4,174 L 305.4,535 L 375,535" fill="none" stroke="#2563eb" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowC)"/>
+  <path id="a3" data-graph-role="edge" data-edge-id="a3" data-source="fixed" data-target="solver" data-edge-kind="flow" data-topic-id="" data-flow="control" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="2" data-route-stretch="1.0" data-bridges="" d="M 645,170 L 669,170 L 669,521 L 710,521" fill="none" stroke="#7c3aed" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowA)"/>
+  <path id="a4" data-graph-role="edge" data-edge-id="a4" data-source="shrink" data-target="solver" data-edge-kind="flow" data-topic-id="" data-flow="control" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="2" data-route-stretch="1.0" data-bridges="" d="M 645,535 L 665.4,535 L 665.4,539 L 710,539" fill="none" stroke="#7c3aed" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowA)"/>
+  <path id="a5" data-graph-role="edge" data-edge-id="a5" data-source="solver" data-target="output" data-edge-kind="flow" data-topic-id="" data-flow="write" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="2" data-route-stretch="1.0" data-bridges="" d="M 960,530 L 980.4,530 L 980.4,170 L 1020,170" fill="none" stroke="#10b981" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowB)"/>
+  <path id="a6" data-graph-role="edge" data-edge-id="a6" data-source="output" data-target="analysis" data-edge-kind="flow" data-topic-id="" data-flow="feedback" data-motion-role="" data-motion-stage="" data-motion-order="" data-protocol="" data-via="" data-critical-path-id="" data-critical-hop="" data-critical-hops="" data-critical="false" data-bends="0" data-route-stretch="1.0" data-bridges="" d="M 1155,235 L 1155,470" fill="none" stroke="#ef4444" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowG)" stroke-dasharray="6,4"/>
+  <g id="node-input" data-graph-role="node" data-node-id="input" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="35,105,285,225">
+  <rect x="35.0" y="105.0" width="250.0" height="120.0" rx="10.0" fill="#EAF3FB" stroke="#0072B2" stroke-width="1.8"/>
+  <text data-text-role="title" data-full-text="Local inputs and boundaries" data-text-max-width="226.0" x="160.0" y="165.0" text-anchor="middle" class="node-title" font-size="14.71">Local inputs and boundaries</text>
+  <text data-text-role="subtitle" data-full-text="Annex 1 air; Annex 2 R(t); Apps. 2--4" data-text-max-width="226.0" x="160.0" y="187.0" text-anchor="middle" class="node-sub" font-size="11.08">Annex 1 air; Annex 2 R(t); Apps. 2--4</text>
+  </g>
+  <g id="node-fixed" data-graph-role="node" data-node-id="fixed" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="375,105,645,235">
+  <rect x="375.0" y="105.0" width="270.0" height="130.0" rx="10.0" fill="#E5F5F0" stroke="#009E73" stroke-width="1.8"/>
+  <text data-text-role="title" data-full-text="Q1--Q3 fixed-radius chain" data-text-max-width="246.0" x="510.0" y="170.0" text-anchor="middle" class="node-title" font-size="17.15">Q1--Q3 fixed-radius chain</text>
+  <text data-text-role="subtitle" data-full-text="Q1 constant; Q2 Picard; Q3 bisection" data-text-max-width="246.0" x="510.0" y="192.0" text-anchor="middle" class="node-sub" font-size="12">Q1 constant; Q2 Picard; Q3 bisection</text>
+  </g>
+  <g id="node-shrink" data-graph-role="node" data-node-id="shrink" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="375,470,645,600">
+  <rect x="375.0" y="470.0" width="270.0" height="130.0" rx="10.0" fill="#E5F5F0" stroke="#009E73" stroke-width="1.8"/>
+  <text data-text-role="title" data-full-text="Q4 measured-shrinkage chain" data-text-max-width="246.0" x="510.0" y="535.0" text-anchor="middle" class="node-title" font-size="15.49">Q4 measured-shrinkage chain</text>
+  <text data-text-role="subtitle" data-full-text="PCHIP R(t); xi coordinate; Appendix 4" data-text-max-width="246.0" x="510.0" y="557.0" text-anchor="middle" class="node-sub" font-size="12">PCHIP R(t); xi coordinate; Appendix 4</text>
+  </g>
+  <g id="node-solver" data-graph-role="node" data-node-id="solver" data-semantic-role="double_rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="710,470,960,590">
+  <rect x="710.0" y="470.0" width="250.0" height="120.0" rx="10.0" fill="#F1EAFE" stroke="#7C3AED" stroke-width="2.0" filter="url(#shadowSoft)"/>
+  <rect x="716.0" y="476.0" width="238.0" height="108.0" rx="7.0" fill="none" stroke="#7C3AED" stroke-width="1.2" opacity="0.65"/>
+  <text data-text-role="title" data-full-text="Finite-volume time march" data-text-max-width="218.0" x="835.0" y="530.0" text-anchor="middle" class="node-title" font-size="16.22">Finite-volume time march</text>
+  <text data-text-role="subtitle" data-full-text="FVM; BE; BDF2; Picard; dgtsv" data-text-max-width="218.0" x="835.0" y="552.0" text-anchor="middle" class="node-sub" font-size="12">FVM; BE; BDF2; Picard; dgtsv</text>
+  </g>
+  <g id="node-output" data-graph-role="node" data-node-id="output" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="1020,105,1290,235">
+  <rect x="1020.0" y="105.0" width="270.0" height="130.0" rx="10.0" fill="#FFF4D6" stroke="#E69F00" stroke-width="1.8"/>
+  <text data-text-role="title" data-full-text="Formal fields and events" data-text-max-width="246.0" x="1155.0" y="170.0" text-anchor="middle" class="node-title" font-size="18">Formal fields and events</text>
+  <text data-text-role="subtitle" data-full-text="Q1/Q2 fields; Q3/Q4 t_dry; XLSX, CSV" data-text-max-width="246.0" x="1155.0" y="192.0" text-anchor="middle" class="node-sub" font-size="12">Q1/Q2 fields; Q3/Q4 t_dry; XLSX, CSV</text>
+  </g>
+  <g id="node-analysis" data-graph-role="node" data-node-id="analysis" data-semantic-role="rect" data-motion-role="" data-motion-stage="" data-motion-order="" data-parent="" data-deployment-id="" data-topic-id="" data-span-id="" data-station-order="" data-status="" data-start-ms="" data-duration-ms="" data-parent-span="" data-graph-bounds="1020,470,1290,600">
+  <rect x="1020.0" y="470.0" width="270.0" height="130.0" rx="10.0" fill="#FDEDE7" stroke="#D55E00" stroke-width="1.8"/>
+  <text data-text-role="title" data-full-text="Read-only validation" data-text-max-width="246.0" x="1155.0" y="535.0" text-anchor="middle" class="node-title" font-size="18">Read-only validation</text>
+  <text data-text-role="subtitle" data-full-text="reference; convergence; audit; scenarios" data-text-max-width="246.0" x="1155.0" y="557.0" text-anchor="middle" class="node-sub" font-size="10.72">reference; convergence; audit; scenarios</text>
+  </g>
+  <g id="a5-label" data-graph-role="label" data-owner="a5" data-graph-bounds="845.32,336,977.4,356">
+  <rect x="845.32" y="336.0" width="132.07999999999998" height="20" rx="6" fill="#ffffff" opacity="0.94"/>
+  <text x="911.36" y="350.0" text-anchor="middle" class="arrow-label">fields + event root</text>
+  </g>
+  <g id="a6-label" data-graph-role="label" data-owner="a6" data-graph-bounds="1021.6,338.5,1152,358.5">
+  <rect x="1021.6" y="338.5" width="130.4" height="20" rx="6" fill="#ffffff" opacity="0.94"/>
+  <text x="1086.8" y="352.5" text-anchor="middle" class="arrow-label">read-only evidence</text>
+  </g>
+  <g id="legend" data-graph-role="legend">
+    <rect id="legend-zone" data-graph-role="reserved" data-reserved-kind="legend" x="170" y="626" width="653.2" height="46" rx="10" fill="none" stroke="none"/>
+    <line data-graph-role="decoration" x1="180.0" y1="640.0" x2="210.0" y2="640.0" stroke="#2563eb" stroke-width="2.4" marker-end="url(#arrowC)"/>
+    <text data-graph-role="decoration" x="220.0" y="644.0" class="legend">inputs</text>
+    <line data-graph-role="decoration" x1="286.64" y1="640.0" x2="316.64" y2="640.0" stroke="#7c3aed" stroke-width="2.4" marker-end="url(#arrowA)"/>
+    <text data-graph-role="decoration" x="326.64" y="644.0" class="legend">model and solver</text>
+    <line data-graph-role="decoration" x1="454.48" y1="640.0" x2="484.48" y2="640.0" stroke="#10b981" stroke-width="2.4" marker-end="url(#arrowB)"/>
+    <text data-graph-role="decoration" x="494.48" y="644.0" class="legend">states and outputs</text>
+    <line data-graph-role="decoration" x1="642.48" y1="640.0" x2="672.48" y2="640.0" stroke="#ef4444" stroke-width="2.4" marker-end="url(#arrowG)"/>
+    <text data-graph-role="decoration" x="682.48" y="644.0" class="legend">checks and analysis</text>
+  </g>
+  <g id="footer" data-graph-role="reserved" data-graph-bounds="35,688,672,704">
+  <text x="35.0" y="700.0" class="footnote">Solid arrows: input / computation / output.  Dashed arrow: read-only verification evidence.</text>
+  </g>
+</svg>
