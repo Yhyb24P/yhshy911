@@ -346,6 +346,7 @@ python src/validate.py --skip-grid --skip-time
 │   ├── 附件2.xlsx
 │   └── 附件3/result1~4.xlsx
 ├── results/
+│   ├── diagrams/model_architecture_spec.md
 │   ├── figures/
 │   └── tables/
 ├── src/
@@ -368,3 +369,5 @@ python src/validate.py --skip-grid --skip-time
 ```
 
 所有长计算结果均带有输入内容指纹。代码、输入数据、网格或关键设置发生变化时，旧缓存自动失效；正式文件采用临时文件与原子替换，避免中断写入被误认为完整结果。
+
+模型、求解、正式输出与独立分析之间的单向证据链，其正式绘图规格见 [results/diagrams/model_architecture_spec.md](results/diagrams/model_architecture_spec.md)。
